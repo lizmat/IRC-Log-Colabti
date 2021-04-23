@@ -7,7 +7,7 @@
   ],
   "depends": [
   ],
-  "description": "blah blah blah",
+  "description": "interface to IRC logs from colabti.org",
   "license": "Artistic-2.0",
   "name": "IRC::Log::Colabti",
   "perl": "6.d",
@@ -16,7 +16,7 @@
   },
   "resources": [
   ],
-  "source-url": "",
+  "source-url": "https://github.com/lizmat/IRC-Log-Colabti.git",
   "tags": [
   ],
   "test-depends": [
