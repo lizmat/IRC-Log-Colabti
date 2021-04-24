@@ -9,7 +9,7 @@ my $log      = IRC::Log::Colabti.new($?FILE.IO.sibling($filename));
 my @entries    = $log.entries;
 my $nr-entries = +@entries;
 
-sub test-time-nick($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
+sub test-common($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     subtest $comment => {
         plan 10;
 
@@ -33,45 +33,59 @@ sub test-time-nick($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     }
 }
 
-plan 13 + @entries;
+plan 16 + @entries;
 
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
 is +$log.problems, 0, 'did we see any problems';
 
 my $entry = @entries.shift;
-test-time-nick $entry, 'Joined', 5, 36, 0, 'bisectable6',
+test-common $entry, 'Joined', 5, 36, 0, 'bisectable6',
   'test joining';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Message', 8, 1, 0, 'MasterDuke',
+test-common $entry, 'Message', 8, 1, 0, 'MasterDuke',
   'test message';
 is $entry.text, 'any objections to merging ?',
   'is text ok in the message';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Self-Reference', 8, 1, 1, 'sena_kun',
+test-common $entry, 'Self-Reference', 8, 1, 1, 'sena_kun',
   'test message';
 is $entry.text, 'still awaits the release blocker',
   'is text ok in the self-reference';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Nick', 9, 35, 0, 'lizmmat_',
+test-common $entry, 'Nick', 9, 35, 0, 'lizmmat_',
   'test nick change';
 is $entry.new-nick, 'lizmat',
   'is new nick ok';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Left', 11, 31, 0, 'lizmat',
+test-common $entry, 'Left', 11, 31, 0, 'nine',
   'test leaving';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Mode', 22, 47, 0, 'ChanServ',
+test-common $entry, 'Mode', 22, 47, 0, 'ChanServ',
   'test mode';
 is $entry.flags, '+o',
   'are the flags ok';
-is-deeply $entry.nicks, Array[Str].new('lizmat'),
+is-deeply $entry.nicks, Array[Str].new('tyil'),
   'are the nicks ok';
+
+$entry = @entries.shift;
+test-common $entry, 'Topic', 23, 48, 0, 'lizmat',
+  'test kick';
+is $entry.text, 'Perl Sucks!',
+  'is the text ok';
+
+$entry = @entries.shift;
+test-common $entry, 'Kick', 23, 59, 0, 'tyil',
+  'test kick';
+is $entry.kickee, 'lizmat',
+  'is the kickee ok';
+is-deeply $entry.spec, '(lizmat))',
+  'is the spec ok';
 
 is +@entries, 0, 'did we see all the entries';
 

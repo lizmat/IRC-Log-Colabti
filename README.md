@@ -53,9 +53,12 @@ The `entries` instance method returns an array with entries from the log. It con
 
     IRC::Log::Colabti::Joined
     IRC::Log::Colabti::Left
+    IRC::Log::Colabti::Kick
     IRC::Log::Colabti::Message
+    IRC::Log::Colabti::Mode
     IRC::Log::Colabti::Nick-Change
     IRC::Log::Colabti::Self-Reference
+    IRC::Log::Colabti::Topic
 
 date
 ----
@@ -138,12 +141,34 @@ IRC::Log::Colabti::Left
 
 No other methods are provided.
 
+IRC::Log::Colabti::Kick
+-----------------------
+
+### kickee
+
+The nick of the user that was kicked in this log entry.
+
+### spec
+
+The specification with which the user was kicked in this log entry.
+
 IRC::Log::Colabti::Message
 --------------------------
 
 ### text
 
 The text that the user entered that resulted in this log entry.
+
+IRC::Log::Colabti::Mode
+-----------------------
+
+### flags
+
+The flags that the user entered that resulted in this log entry.
+
+### nicks
+
+An array of nicknames (to which the flag setting should be applied) that the user entered that resulted in this log entry.
 
 IRC::Log::Colabti::Nick-Change
 ------------------------------
@@ -156,6 +181,13 @@ IRC::Log::Colabti::Self-Reference
 ---------------------------------
 
 The text that the user entered that resulted in this log entry.
+
+IRC::Log::Colabti::Topic
+------------------------
+
+### text
+
+The new topic that the user entered that resulted in this log entry.
 
 AUTHOR
 ======

@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.5>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.6>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
@@ -23,19 +23,22 @@ class IRC::Log::Colabti:ver<0.0.5>:auth<cpan:ELIZABETH> {
         }
     }
 
-    class Message does Entry {
-        has Str $.text is required;
-        method gist() { "$.hhmm <$!nick> $!text" }
-    }
-    class Self-Reference does Entry {
-        has Str $.text is required;
-        method gist() { "$.hhmm * $!nick $!text" }
-    }
     class Joined does Entry {
         method gist() { "$.hhmm *** $!nick joined" }
     }
     class Left does Entry {
         method gist() { "$.hhmm *** $!nick left" }
+    }
+    class Message does Entry {
+        has Str $.text is required;
+        method gist() { "$.hhmm <$!nick> $!text" }
+    }
+    class Kick does Entry {
+        has Str $.kickee;
+        has Str $.spec;
+        method gist() {
+            "$.hhmm *** $!kickee was kicked by $!nick $!spec"
+        }
     }
     class Mode does Entry {
         has Str $.flags;
@@ -49,6 +52,14 @@ class IRC::Log::Colabti:ver<0.0.5>:auth<cpan:ELIZABETH> {
         method gist() {
             "$.hhmm *** $!nick is now known as $!new-nick"
         }
+    }
+    class Self-Reference does Entry {
+        has Str $.text is required;
+        method gist() { "$.hhmm * $!nick $!text" }
+    }
+    class Topic does Entry {
+        has Str $.text is required;
+        method gist() { "$.hhmm *** $!nick changes topic to: $!text" }
     }
 
     method !accept(\type, |c --> Nil) {
@@ -127,6 +138,19 @@ class IRC::Log::Colabti:ver<0.0.5>:auth<cpan:ELIZABETH> {
                             self!accept: Mode,
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :$flags, :@nicks;
+                        }
+                        elsif $message.starts-with('changes topic to: ') {
+                            self!accept: Topic,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
+                              :text($message.substr(18));
+                        }
+                        elsif $message.starts-with('was kicked by ') {
+                            my $kickee := $nick;
+                            my $index  := $message.index(' ', 14);
+                            $nick      := $message.substr(14, $index - 14);
+                            self!accept: Kick,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
+                              :$kickee, :spec($message.substr($index + 1));
                         }
                         else {
                             self!problem($line, 'unclear control message');
@@ -219,9 +243,12 @@ log.  It contains instances of one of the following classes:
 
     IRC::Log::Colabti::Joined
     IRC::Log::Colabti::Left
+    IRC::Log::Colabti::Kick
     IRC::Log::Colabti::Message
+    IRC::Log::Colabti::Mode
     IRC::Log::Colabti::Nick-Change
     IRC::Log::Colabti::Self-Reference
+    IRC::Log::Colabti::Topic
 
 =head2 date
 
@@ -310,11 +337,32 @@ No other methods are provided.
 
 No other methods are provided.
 
+=head2 IRC::Log::Colabti::Kick
+
+=head3 kickee
+
+The nick of the user that was kicked in this log entry.
+
+=head3 spec
+
+The specification with which the user was kicked in this log entry.
+
 =head2 IRC::Log::Colabti::Message
 
 =head3 text
 
 The text that the user entered that resulted in this log entry.
+
+=head2 IRC::Log::Colabti::Mode
+
+=head3 flags
+
+The flags that the user entered that resulted in this log entry.
+
+=head3 nicks
+
+An array of nicknames (to which the flag setting should be applied)
+that the user entered that resulted in this log entry.
 
 =head2 IRC::Log::Colabti::Nick-Change
 
@@ -325,6 +373,12 @@ The new nick of the user that resulted in this log entry.
 =head2 IRC::Log::Colabti::Self-Reference
 
 The text that the user entered that resulted in this log entry.
+
+=head2 IRC::Log::Colabti::Topic
+
+=head3 text
+
+The new topic that the user entered that resulted in this log entry.
 
 =head1 AUTHOR
 

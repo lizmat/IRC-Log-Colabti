@@ -2,6 +2,10 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.6  2021-04-25T00:15:10+02:00
+    - Add support for 'Kick' control messages
+    - Add support for 'Topic' control messages
+
 0.0.5  2021-04-24T22:31:00+02:00
     - Add support for 'Mode' control messages
 
