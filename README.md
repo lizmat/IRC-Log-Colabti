@@ -65,11 +65,23 @@ The hour (in UTC) the entry was added to the log.
 
 ### minute
 
-The minute the entry was added to the log.
+The minute (in UTC) the entry was added to the log.
+
+### ordinal
+
+Zero-based ordinal number of this entry within the minute it occurred.
 
 ### nick
 
 The nick of the user that originated the entry in the log.
+
+### hhmm
+
+The representation for hour and minute used in the log: "[hh:mm]" for this entry.
+
+### target
+
+Representation of an anchor in an HTML-file for deep linking to this entry.
 
 IRC::Log::Colabti::Joined
 -------------------------

@@ -1,22 +1,28 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.1>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
     has @.entries is built(False);
 
     role Entry {
-        has Int $.hour;
-        has Int $.minute;
-        has Str $.nick;
+        has Int $.hour    is required;
+        has Int $.minute  is required;
+        has Int $.ordinal is required;
+        has Str $.nick    is required;
 
         method hhmm() { sprintf '[%02d:%02d]', $!hour, $!minute }
+        method target() {
+            $!ordinal
+              ?? sprintf('%02d%02d-%d', $!hour, $!minute, $!ordinal)
+              !! sprintf('%02d%02d'   , $!hour, $!minute)
+        }
     }
 
     class Message does Entry {
-        has $.text;
+        has $.text is required;
         method gist() { "$.hhmm <$!nick> $!text" }
     }
     class Self-Reference does Entry {
-        has $.text;
+        has $.text is required;
         method gist() { "$.hhmm * $!nick $!text" }
     }
     class Joined does Entry {
@@ -26,13 +32,16 @@ class IRC::Log::Colabti:ver<0.0.1>:auth<cpan:ELIZABETH> {
         method gist() { "$.hhmm *** $!nick left" }
     }
     class Nick-Change does Entry {
-        has $.new-nick;
+        has $.new-nick is required;
         method gist() {
             "$.hhmm *** $!nick is now known as $!new-nick"
         }
     }
 
     method !INITIALIZE(Str:D $slurped) {
+        my $last-hour   := -1;
+        my $last-minute := -1;
+        my $ordinal;
 
         for $slurped.lines.grep(*.chars) -> $line {
             sub ignored($reason) {
@@ -44,10 +53,19 @@ class IRC::Log::Colabti:ver<0.0.1>:auth<cpan:ELIZABETH> {
                 my $minute := $line.substr(4,2).Int;
                 my $text   := $line.substr(8);
 
+                if $minute == $last-minute && $hour == $last-hour {
+                    ++$ordinal;
+                }
+                else {
+                    $last-hour   := $hour;
+                    $last-minute := $minute;
+                    $ordinal = 0;
+                }
+
                 if $text.starts-with('<') {
                     with $text.index('> ') -> $index {
                         @!entries.push: Message.new:
-                          :$hour, :$minute,
+                          :$hour, :$minute, :$ordinal,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                     }
@@ -58,7 +76,7 @@ class IRC::Log::Colabti:ver<0.0.1>:auth<cpan:ELIZABETH> {
                 elsif $text.starts-with('* ') {
                     with $text.index(' ',2) -> $index {
                         @!entries.push: Self-Reference.new:
-                          :$hour, :$minute,
+                          :$hour, :$minute, :$ordinal,
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
                     }
@@ -71,14 +89,16 @@ class IRC::Log::Colabti:ver<0.0.1>:auth<cpan:ELIZABETH> {
                         my $nick    := $text.substr(4,$index - 4);
                         my $message := $text.substr($index + 1);
                         if $$message eq 'joined' {
-                            @!entries.push: Joined.new: :$hour, :$minute, :$nick;
+                            @!entries.push: Joined.new:
+                              :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message eq 'left' {
-                            @!entries.push: Left.new: :$hour, :$minute, :$nick;
+                            @!entries.push: Left.new:
+                              :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message.starts-with('is now known as ') {
                             @!entries.push: Nick-Change.new:
-                              :$hour, :$minute, :$nick,
+                              :$hour, :$minute, :$ordinal, :$nick,
                               :new-nick($message.substr(16));
                         }
                         else {
@@ -174,11 +194,25 @@ The hour (in UTC) the entry was added to the log.
 
 =head3 minute
 
-The minute the entry was added to the log.
+The minute (in UTC) the entry was added to the log.
+
+=head3 ordinal
+
+Zero-based ordinal number of this entry within the minute it occurred.
 
 =head3 nick
 
 The nick of the user that originated the entry in the log.
+
+=head3 hhmm
+
+The representation for hour and minute used in the log: "[hh:mm]" for
+this entry.
+
+=head3 target
+
+Representation of an anchor in an HTML-file for deep linking to this
+entry.
 
 =head2 IRC::Log::Colabti::Joined
 

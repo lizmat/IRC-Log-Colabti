@@ -1,12 +1,22 @@
 use Test;
 use IRC::Log::Colabti;
 
-sub test-time-nick($entry, $class, $hour, $minute, $nick, $comment) {
+sub test-time-nick($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     subtest $comment => {
+        plan 7;
+
         isa-ok $entry, IRC::Log::Colabti::{$class};
-        is $entry.hour,   $hour,   "is hour correct: $hour";
-        is $entry.minute, $minute, "is minute correct: $minute";
-        is $entry.nick  , $nick,   "is nick correct: $nick";
+        is $entry.hour,    $hour,    "is hour correct: $hour";
+        is $entry.minute,  $minute,  "is minute correct: $minute";
+        is $entry.ordinal, $ordinal, "is ordinal correct: $ordinal";
+        is $entry.nick,    $nick,    "is nick correct: $nick";
+        is $entry.hhmm, sprintf('[%02s:%02d]',$hour,$minute),
+          'is .hhmm correct';
+        is $entry.target, (
+          $ordinal
+            ?? sprintf('%02s%02d-%d',$hour,$minute,$ordinal)
+            !! sprintf('%02s%02d',$hour,$minute)
+        ), 'is .target correct';
     }
 }
 
@@ -18,29 +28,29 @@ plan 5 + @entries;
 isa-ok $log, IRC::Log::Colabti;
 
 my $entry = @entries.shift;
-test-time-nick $entry, 'Joined', 5, 36, 'bisectable6',
+test-time-nick $entry, 'Joined', 5, 36, 0, 'bisectable6',
   'test joining';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Message', 8, 1, 'MasterDuke',
+test-time-nick $entry, 'Message', 8, 1, 0, 'MasterDuke',
   'test message';
 is $entry.text, 'any objections to merging ?',
   'is text ok in the message';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Self-Reference', 8, 22, 'sena_kun',
+test-time-nick $entry, 'Self-Reference', 8, 1, 1, 'sena_kun',
   'test message';
 is $entry.text, 'still awaits the release blocker',
   'is text ok in the self-reference';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Nick', 9, 35, 'lizmmat_',
+test-time-nick $entry, 'Nick', 9, 35, 0, 'lizmmat_',
   'test nick change';
 is $entry.new-nick, 'lizmat',
   'is new nick ok';
 
 $entry = @entries.shift;
-test-time-nick $entry, 'Left', 11, 31, 'lizmat',
+test-time-nick $entry, 'Left', 11, 31, 0, 'lizmat',
   'test leaving';
 
 is +@entries, 0, 'did we see all the entries';
