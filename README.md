@@ -11,9 +11,12 @@ SYNOPSIS
 ```raku
 use IRC::Log::Colabti;
 
-my $log = IRC::Log::Colabti.new($filename);
+my $log = IRC::Log::Colabti.new($filename.IO);
 
+say "Logs from $log.date()";
 .say for $log.entries;
+
+my $log = IRC::Log::Colabti.new($text, $date);
 ```
 
 DESCRIPTION
@@ -28,12 +31,16 @@ new
 ---
 
 ```raku
-my $log = IRC::Log::Colabti.new($filename);
+my $log = IRC::Log::Colabti.new($filename.IO);
+
+my $log = IRC::Log::Colabti.new($text, $date);
 ```
 
-The `new` class method takes a filename as parameter, and returns an instantiated object representing the messages in that log file.
+The `new` class method either takes an `IO` object as the first parameter, and a `Date` object as the optional second parameter (eliding the `Date` from the basename if not specified), and returns an instantiated object representing the entries in that log file.
 
-It will note problems on STDERR if any line could not be interpreted.
+Or it will take a `Str` as the first parameter for the text of the log, and a `Date` as the second parameter.
+
+Any lines that can not be interpreted, are ignored: they are available with the `problems` method.
 
 entries
 -------
@@ -49,6 +56,24 @@ The `entries` instance method returns an array with entries from the log. It con
     IRC::Log::Colabti::Message
     IRC::Log::Colabti::Nick-Change
     IRC::Log::Colabti::Self-Reference
+
+date
+----
+
+```raku
+say $log.date;
+```
+
+It `date` instance method returns the `Date` object for this log.
+
+problems
+--------
+
+```raku
+.say for $log.problems;
+```
+
+The `problems` instance method returns an array with `Pair`s of lines that could not be interpreted in the log. The key is a text of the reason it could not be interpreted, and the value is the actual line.
 
 CLASSES
 =======

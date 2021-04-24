@@ -1,7 +1,9 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
-    has @.entries is built(False);
+class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
+    has Date $.date;
+    has @.entries  is built(False);
+    has @.problems is built(False);
 
     role Entry {
         has Int $.hour    is required;
@@ -38,15 +40,18 @@ class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
         }
     }
 
-    method !INITIALIZE(Str:D $slurped) {
+    method !problem(Str:D $line, Str:D $reason -->Nil) {
+        @!problems.push($reason => $line);
+    }
+
+    method !INITIALIZE(Str:D $slurped, Date:D $date) {
+        $!date := $date;
+
         my $last-hour   := -1;
         my $last-minute := -1;
         my $ordinal;
 
         for $slurped.lines.grep(*.chars) -> $line {
-            sub ignored($reason) {
-                note "Invalid line ignored because $reason\n$line";
-            }
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
                 my $hour   := $line.substr(1,2).Int;
@@ -70,7 +75,7 @@ class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
                           :text($text.substr($index + 2));
                     }
                     else {
-                        ignored("could not find nick delimiter");
+                        self!problem($line,"could not find nick delimiter");
                     }
                 }
                 elsif $text.starts-with('* ') {
@@ -81,7 +86,7 @@ class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
                           :text($text.substr($index + 1));
                     }
                     else {
-                        ignored("self-reference nick");
+                        self!problem($line, "self-reference nick");
                     }
                 }
                 elsif $text.starts-with('*** ') {
@@ -102,24 +107,31 @@ class IRC::Log::Colabti:ver<0.0.2>:auth<cpan:ELIZABETH> {
                               :new-nick($message.substr(16));
                         }
                         else {
-                            ignored('unclear control message');
+                            self!problem($line, 'unclear control message');
                         }
                     }
                     else {
-                        ignored("self-reference nick");
+                        self!problem($line, "self-reference nick");
                     }
                 }
             }
             else {
-                ignored("no timestamp found");
+                self!problem($line, "no timestamp found");
             }
         }
 
         self
     }
 
-    method new(IO() $file) {
-        self.CREATE!INITIALIZE($file.slurp)
+    multi method new(
+      IO:D $file,
+      Date() $date = $file.basename.split(".").head
+    ) {
+        self.CREATE!INITIALIZE($file.slurp, $date)
+    }
+
+    multi method new(Str:D $slurped, Date() $date) {
+        self.CREATE!INITIALIZE($slurped, $date)
     }
 }
 
@@ -135,9 +147,12 @@ IRC::Log::Colabti - interface to IRC logs from colabti.org
 
 use IRC::Log::Colabti;
 
-my $log = IRC::Log::Colabti.new($filename);
+my $log = IRC::Log::Colabti.new($filename.IO);
 
+say "Logs from $log.date()";
 .say for $log.entries;
+
+my $log = IRC::Log::Colabti.new($text, $date);
 
 =end code
 
@@ -152,14 +167,22 @@ from colabti.org (raw format).
 
 =begin code :lang<raku>
 
-my $log = IRC::Log::Colabti.new($filename);
+my $log = IRC::Log::Colabti.new($filename.IO);
+
+my $log = IRC::Log::Colabti.new($text, $date);
 
 =end code
 
-The C<new> class method takes a filename as parameter, and returns
-an instantiated object representing the messages in that log file.
+The C<new> class method either takes an C<IO> object as the first parameter,
+and a C<Date> object as the optional second parameter (eliding the C<Date>
+from the basename if not specified), and returns an instantiated object
+representing the entries in that log file.
 
-It will note problems on STDERR if any line could not be interpreted.
+Or it will take a C<Str> as the first parameter for the text of the log,
+and a C<Date> as the second parameter.
+
+Any lines that can not be interpreted, are ignored: they are available
+with the C<problems> method.
 
 =head2 entries
 
@@ -177,6 +200,29 @@ log.  It contains instances of one of the following classes:
     IRC::Log::Colabti::Message
     IRC::Log::Colabti::Nick-Change
     IRC::Log::Colabti::Self-Reference
+
+=head2 date
+
+=begin code :lang<raku>
+
+say $log.date;
+
+=end code
+
+It C<date> instance method returns the C<Date> object for this log.
+
+=head2 problems
+
+=begin code :lang<raku>
+
+.say for $log.problems;
+
+=end code
+
+The C<problems> instance method returns an array with C<Pair>s of
+lines that could not be interpreted in the log.  The key is a text
+of the reason it could not be interpreted, and the value is the
+actual line.
 
 =head1 CLASSES
 

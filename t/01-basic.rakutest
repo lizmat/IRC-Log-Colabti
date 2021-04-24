@@ -20,12 +20,15 @@ sub test-time-nick($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     }
 }
 
-my $log = IRC::Log::Colabti.new($?FILE.IO.sibling('log.sample'));
-my @entries = $log.entries;
+my $filename = '2021-04-22';
+my $log      = IRC::Log::Colabti.new($?FILE.IO.sibling($filename));
+my @entries    = $log.entries;
+my $nr-entries = +@entries;
 
-plan 5 + @entries;
+plan 9 + @entries;
 
 isa-ok $log, IRC::Log::Colabti;
+is-deeply $log.date, $filename.Date, 'is the date correct';
 
 my $entry = @entries.shift;
 test-time-nick $entry, 'Joined', 5, 36, 0, 'bisectable6',
@@ -54,5 +57,14 @@ test-time-nick $entry, 'Left', 11, 31, 0, 'lizmat',
   'test leaving';
 
 is +@entries, 0, 'did we see all the entries';
+
+$log = IRC::Log::Colabti.new(
+  $?FILE.IO.sibling($filename).slurp,
+  $filename.Date
+);
+
+isa-ok $log, IRC::Log::Colabti;
+is +$log.entries, $nr-entries, 'did we get the correct number of entries';
+is-deeply $log.date, $filename.Date, 'is the date correct again';
 
 # vim: expandtab shiftwidth=4
