@@ -25,10 +25,11 @@ my $log      = IRC::Log::Colabti.new($?FILE.IO.sibling($filename));
 my @entries    = $log.entries;
 my $nr-entries = +@entries;
 
-plan 9 + @entries;
+plan 11 + @entries;
 
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $filename.Date, 'is the date correct';
+is +$log.problems, 0, 'did we see any problems';
 
 my $entry = @entries.shift;
 test-time-nick $entry, 'Joined', 5, 36, 0, 'bisectable6',
@@ -66,5 +67,6 @@ $log = IRC::Log::Colabti.new(
 isa-ok $log, IRC::Log::Colabti;
 is +$log.entries, $nr-entries, 'did we get the correct number of entries';
 is-deeply $log.date, $filename.Date, 'is the date correct again';
+is +$log.problems, 0, 'did we see any problems';
 
 # vim: expandtab shiftwidth=4
