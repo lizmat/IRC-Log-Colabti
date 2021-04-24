@@ -80,29 +80,49 @@ CLASSES
 
 All of the classes that are returned by the `entries` methods, have the following methods in common:
 
+### date
+
+The `Date` of this entry.
+
+### entries
+
+The `entries` of the `log` of this entry.
+
 ### gist
 
 Create the string representation of the entry as it originally occurred in the log.
+
+### hhmm
+
+The representation for hour and minute used in the log: "[hh:mm]" for this entry.
 
 ### hour
 
 The hour (in UTC) the entry was added to the log.
 
+### log
+
+The `IRC::Log::Colabti` object of which this entry is a part.
+
 ### minute
 
 The minute (in UTC) the entry was added to the log.
-
-### ordinal
-
-Zero-based ordinal number of this entry within the minute it occurred.
 
 ### nick
 
 The nick of the user that originated the entry in the log.
 
-### hhmm
+### ordinal
 
-The representation for hour and minute used in the log: "[hh:mm]" for this entry.
+Zero-based ordinal number of this entry within the minute it occurred.
+
+### pos
+
+The position of this entry in the `entries` of the `log` of this entry.
+
+### problems
+
+The `problems` of the `log` of this entry.
 
 ### target
 

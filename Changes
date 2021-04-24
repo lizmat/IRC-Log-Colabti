@@ -2,6 +2,11 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.4  2021-04-24T20:38:28+02:00
+    - Add 'log' attribute to entries, referring back to the Log object
+    - Make the 'log' attribute handle 'date', 'entries', 'problems'
+    - Add 'pos' method to entries, giving the position in the entries
+
 0.0.3  2021-04-24T16:09:10+02:00
     - Add 'date' attribute
     - Method new now a multi, either IO or string + date

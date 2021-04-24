@@ -1,11 +1,12 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.4>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
 
     role Entry {
+        has     $.log     is required handles <entries date problems>;
         has Int $.hour    is required;
         has Int $.minute  is required;
         has Int $.ordinal is required;
@@ -16,6 +17,9 @@ class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
             $!ordinal
               ?? sprintf('%02d%02d-%d', $!hour, $!minute, $!ordinal)
               !! sprintf('%02d%02d'   , $!hour, $!minute)
+        }
+        method pos() {
+            self.entries.first({ $_ =:= self }, :k)
         }
     }
 
@@ -40,8 +44,12 @@ class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
         }
     }
 
-    method !problem(Str:D $line, Str:D $reason -->Nil) {
-        @!problems.push($reason => $line);
+    method !accept(\type, |c --> Nil) {
+        @!entries[@!entries.elems] := type.new(|c);
+    }
+
+    method !problem(Str:D $line, Str:D $reason --> Nil) {
+        @!problems[@!problems.elems] := $reason => $line;
     }
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
@@ -69,8 +77,8 @@ class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
 
                 if $text.starts-with('<') {
                     with $text.index('> ') -> $index {
-                        @!entries.push: Message.new:
-                          :$hour, :$minute, :$ordinal,
+                        self!accept: Message,
+                          :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                     }
@@ -80,8 +88,8 @@ class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
                 }
                 elsif $text.starts-with('* ') {
                     with $text.index(' ',2) -> $index {
-                        @!entries.push: Self-Reference.new:
-                          :$hour, :$minute, :$ordinal,
+                        self!accept: Self-Reference,
+                          :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
                     }
@@ -94,16 +102,16 @@ class IRC::Log::Colabti:ver<0.0.3>:auth<cpan:ELIZABETH> {
                         my $nick    := $text.substr(4,$index - 4);
                         my $message := $text.substr($index + 1);
                         if $$message eq 'joined' {
-                            @!entries.push: Joined.new:
-                              :$hour, :$minute, :$ordinal, :$nick;
+                            self!accept: Joined,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message eq 'left' {
-                            @!entries.push: Left.new:
-                              :$hour, :$minute, :$ordinal, :$nick;
+                            self!accept: Left,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message.starts-with('is now known as ') {
-                            @!entries.push: Nick-Change.new:
-                              :$hour, :$minute, :$ordinal, :$nick,
+                            self!accept: Nick-Change,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :new-nick($message.substr(16));
                         }
                         else {
@@ -229,31 +237,51 @@ actual line.
 All of the classes that are returned by the C<entries> methods, have
 the following methods in common:
 
+=head3 date
+
+The C<Date> of this entry.
+
+=head3 entries
+
+The C<entries> of the C<log> of this entry.
+
 =head3 gist
 
 Create the string representation of the entry as it originally occurred
 in the log.
 
+=head3 hhmm
+
+The representation for hour and minute used in the log: "[hh:mm]" for
+this entry.
+
 =head3 hour
 
 The hour (in UTC) the entry was added to the log.
+
+=head3 log
+
+The C<IRC::Log::Colabti> object of which this entry is a part.
 
 =head3 minute
 
 The minute (in UTC) the entry was added to the log.
 
-=head3 ordinal
-
-Zero-based ordinal number of this entry within the minute it occurred.
-
 =head3 nick
 
 The nick of the user that originated the entry in the log.
 
-=head3 hhmm
+=head3 ordinal
 
-The representation for hour and minute used in the log: "[hh:mm]" for
-this entry.
+Zero-based ordinal number of this entry within the minute it occurred.
+
+=head3 pos
+
+The position of this entry in the C<entries> of the C<log> of this entry.
+
+=head3 problems
+
+The C<problems> of the C<log> of this entry.
 
 =head3 target
 
