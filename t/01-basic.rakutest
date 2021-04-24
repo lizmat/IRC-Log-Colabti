@@ -33,7 +33,7 @@ sub test-time-nick($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     }
 }
 
-plan 11 + @entries;
+plan 13 + @entries;
 
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
@@ -64,6 +64,14 @@ is $entry.new-nick, 'lizmat',
 $entry = @entries.shift;
 test-time-nick $entry, 'Left', 11, 31, 0, 'lizmat',
   'test leaving';
+
+$entry = @entries.shift;
+test-time-nick $entry, 'Mode', 22, 47, 0, 'ChanServ',
+  'test mode';
+is $entry.flags, '+o',
+  'are the flags ok';
+is-deeply $entry.nicks, Array[Str].new('lizmat'),
+  'are the nicks ok';
 
 is +@entries, 0, 'did we see all the entries';
 

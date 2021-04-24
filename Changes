@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.5  2021-04-24T22:31:00+02:00
+    - Add support for 'Mode' control messages
+
 0.0.4  2021-04-24T20:38:28+02:00
     - Add 'log' attribute to entries, referring back to the Log object
     - Make the 'log' attribute handle 'date', 'entries', 'problems'

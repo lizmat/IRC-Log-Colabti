@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.4>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.5>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
@@ -24,11 +24,11 @@ class IRC::Log::Colabti:ver<0.0.4>:auth<cpan:ELIZABETH> {
     }
 
     class Message does Entry {
-        has $.text is required;
+        has Str $.text is required;
         method gist() { "$.hhmm <$!nick> $!text" }
     }
     class Self-Reference does Entry {
-        has $.text is required;
+        has Str $.text is required;
         method gist() { "$.hhmm * $!nick $!text" }
     }
     class Joined does Entry {
@@ -37,8 +37,15 @@ class IRC::Log::Colabti:ver<0.0.4>:auth<cpan:ELIZABETH> {
     class Left does Entry {
         method gist() { "$.hhmm *** $!nick left" }
     }
+    class Mode does Entry {
+        has Str $.flags;
+        has Str @.nicks;
+        method gist() {
+            "$.hhmm *** $!nick sets mode: $!flags @.nicks.join(" ")"
+        }
+    }
     class Nick-Change does Entry {
-        has $.new-nick is required;
+        has Str $.new-nick is required;
         method gist() {
             "$.hhmm *** $!nick is now known as $!new-nick"
         }
@@ -113,6 +120,13 @@ class IRC::Log::Colabti:ver<0.0.4>:auth<cpan:ELIZABETH> {
                             self!accept: Nick-Change,
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :new-nick($message.substr(16));
+                        }
+                        elsif $message.starts-with('sets mode: ') {
+                            my @nicks  = $message.substr(10).words;
+                            my $flags := @nicks.shift;
+                            self!accept: Mode,
+                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
+                              :$flags, :@nicks;
                         }
                         else {
                             self!problem($line, 'unclear control message');
