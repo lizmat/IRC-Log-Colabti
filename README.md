@@ -76,7 +76,7 @@ problems
 .say for $log.problems;
 ```
 
-The `problems` instance method returns an array with `Pair`s of lines that could not be interpreted in the log. The key is a text of the reason it could not be interpreted, and the value is the actual line.
+The `problems` instance method returns an array with `Pair`s of lines that could not be interpreted in the log. The key is a string with the line number and a reason it could not be interpreted. The value is the actual line.
 
 CLASSES
 =======

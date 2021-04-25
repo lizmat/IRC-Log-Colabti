@@ -2,6 +2,15 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.8  2021-04-25T14:29:07+02:00
+    - Don't use .lines, but split("\n") to fix edge cases with
+      vertical whitespace
+    - Don't use captures when accepting, makes initializing
+      about 2x as fast
+    - Use :ignoremark for finding end of nick in message if
+      without :ignoremark failed, to fix some edge cases
+    - Improve error reporting by providing line number as well
+
 0.0.7  2021-04-25T12:40:39+02:00
     - Slurp files with "utf8-c8" encoding to be on the safe side
     - Rename "hhmm" method to "seen-at"

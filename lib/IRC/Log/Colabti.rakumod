@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.8>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
@@ -70,22 +70,23 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
         method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
     }
 
-    method !accept(\type, |c --> Nil) {
-        @!entries[@!entries.elems] := type.new(|c);
-    }
-
-    method !problem(Str:D $line, Str:D $reason --> Nil) {
-        @!problems[@!problems.elems] := $reason => $line;
-    }
-
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
         $!date := $date;
 
         my $last-hour   := -1;
         my $last-minute := -1;
         my $ordinal;
+        my int $linenr  = -1;
 
-        for $slurped.lines.grep(*.chars) -> $line {
+        method !accept(\object --> Nil) {
+            @!entries[@!entries.elems] := object;
+        }
+
+        method !problem(Str:D $line, Str:D $reason --> Nil) {
+            @!problems[@!problems.elems] := "Line $linenr: $reason" => $line;
+        }
+
+        for $slurped.split("\n").grep({ ++$linenr; .chars }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
                 my $hour   := $line.substr(1,2).Int;
@@ -103,7 +104,13 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
 
                 if $text.starts-with('<') {
                     with $text.index('> ') -> $index {
-                        self!accept: Message,
+                        self!accept: Message.new:
+                          :log(self), :$hour, :$minute, :$ordinal,
+                          :nick($text.substr(1,$index - 1)),
+                          :text($text.substr($index + 2));
+                    }
+                    orwith $text.index('> ', :ignoremark) -> $index {
+                        self!accept: Message.new:
                           :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
@@ -114,7 +121,7 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
                 }
                 elsif $text.starts-with('* ') {
                     with $text.index(' ',2) -> $index {
-                        self!accept: Self-Reference,
+                        self!accept: Self-Reference.new:
                           :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
@@ -128,27 +135,27 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
                         my $nick    := $text.substr(4,$index - 4);
                         my $message := $text.substr($index + 1);
                         if $$message eq 'joined' {
-                            self!accept: Joined,
+                            self!accept: Joined.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message eq 'left' {
-                            self!accept: Left,
+                            self!accept: Left.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick;
                         }
                         elsif $message.starts-with('is now known as ') {
-                            self!accept: Nick-Change,
+                            self!accept: Nick-Change.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :new-nick($message.substr(16));
                         }
                         elsif $message.starts-with('sets mode: ') {
                             my @nicks  = $message.substr(10).words;
                             my $flags := @nicks.shift;
-                            self!accept: Mode,
+                            self!accept: Mode.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :$flags, :@nicks;
                         }
                         elsif $message.starts-with('changes topic to: ') {
-                            self!accept: Topic,
+                            self!accept: Topic.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :text($message.substr(18));
                         }
@@ -156,7 +163,7 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
                             my $kickee := $nick;
                             my $index  := $message.index(' ', 14);
                             $nick      := $message.substr(14, $index - 14);
-                            self!accept: Kick,
+                            self!accept: Kick.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$nick,
                               :$kickee, :spec($message.substr($index + 1));
                         }
@@ -169,7 +176,7 @@ class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
                     }
                 }
             }
-            else {
+            elsif $line.trim.chars {
                 self!problem($line, "no timestamp found");
             }
         }
@@ -277,9 +284,9 @@ It C<date> instance method returns the C<Date> object for this log.
 =end code
 
 The C<problems> instance method returns an array with C<Pair>s of
-lines that could not be interpreted in the log.  The key is a text
-of the reason it could not be interpreted, and the value is the
-actual line.
+lines that could not be interpreted in the log.  The key is a string
+with the line number and a reason it could not be interpreted.  The
+value is the actual line.
 
 =head1 CLASSES
 
