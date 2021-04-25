@@ -1,10 +1,9 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.10>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.11>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
-    has Lock $!nicks-lock;
     has      %.nicks;
 
     role Entry {
@@ -74,15 +73,18 @@ class IRC::Log::Colabti:ver<0.0.10>:auth<cpan:ELIZABETH> {
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
         $!date       := $date;
-        $!nicks-lock := Lock.new;
 
         my $last-hour   := -1;
         my $last-minute := -1;
         my $ordinal;
         my int $linenr  = -1;
 
+        my @entries;
+        my %nicks;
+
         method !accept(\object --> Nil) {
-            @!entries[@!entries.elems] := object;
+            @entries.push: object;
+            %nicks{object.nick}.push: object;
         }
 
         method !problem(Str:D $line, Str:D $reason --> Nil) {
@@ -184,6 +186,11 @@ class IRC::Log::Colabti:ver<0.0.10>:auth<cpan:ELIZABETH> {
             }
         }
 
+        # store the immutable results
+        @!entries  := @entries.List;
+        %nicks{$_} .= List for %nicks.keys;
+        %!nicks := %nicks.Map;
+
         self
     }
 
@@ -200,17 +207,6 @@ class IRC::Log::Colabti:ver<0.0.10>:auth<cpan:ELIZABETH> {
 
     multi method new(Str:D $slurped, Date() $date) {
         self.CREATE!INITIALIZE($slurped, $date)
-    }
-
-    method nicks() {
-        $!nicks-lock.protect: {
-            unless %!nicks.elems {
-                %!nicks{.nick}.push: $_ for @!entries;
-                %!nicks{$_} .= List for %!nicks.keys;
-                %!nicks := %!nicks.Map;
-            }
-            %!nicks
-        }
     }
 }
 

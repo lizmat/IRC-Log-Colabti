@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.11  2021-04-25T20:29:38+02:00
+    - Make "nicks" setup non-lazy and a normal attribute
+
 0.0.10  2021-04-25T19:20:14+02:00
     - Add "nicks" instance method with Map of nick -> entries
 
