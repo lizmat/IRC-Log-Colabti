@@ -84,7 +84,18 @@ date
 say $log.date;
 ```
 
-It `date` instance method returns the `Date` object for this log.
+The `date` instance method returns the `Date` object for this log.
+
+nicks
+-----
+
+```raku
+for $log.nicks.sort(*.key) -> (:key($nick), :value(@entries)) {
+    say "$nick has @entries.elems() entries";
+}
+```
+
+The `nicks` instance method returns a `Map` with the nicks seen for this log as keys, and a `List` with entries that originated by that nick.
 
 problems
 --------

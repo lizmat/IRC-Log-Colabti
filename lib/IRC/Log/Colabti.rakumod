@@ -1,9 +1,11 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.9>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.10>:auth<cpan:ELIZABETH> {
     has Date $.date;
-    has @.entries  is built(False);
-    has @.problems is built(False);
+    has      @.entries;
+    has      @.problems;
+    has Lock $!nicks-lock;
+    has      %.nicks;
 
     role Entry {
         has     $.log     is required handles <entries date problems>;
@@ -71,7 +73,8 @@ class IRC::Log::Colabti:ver<0.0.9>:auth<cpan:ELIZABETH> {
     }
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
-        $!date := $date;
+        $!date       := $date;
+        $!nicks-lock := Lock.new;
 
         my $last-hour   := -1;
         my $last-minute := -1;
@@ -198,6 +201,17 @@ class IRC::Log::Colabti:ver<0.0.9>:auth<cpan:ELIZABETH> {
     multi method new(Str:D $slurped, Date() $date) {
         self.CREATE!INITIALIZE($slurped, $date)
     }
+
+    method nicks() {
+        $!nicks-lock.protect: {
+            unless %!nicks.elems {
+                %!nicks{.nick}.push: $_ for @!entries;
+                %!nicks{$_} .= List for %!nicks.keys;
+                %!nicks := %!nicks.Map;
+            }
+            %!nicks
+        }
+    }
 }
 
 =begin pod
@@ -296,7 +310,21 @@ say $log.date;
 
 =end code
 
-It C<date> instance method returns the C<Date> object for this log.
+The C<date> instance method returns the C<Date> object for this log.
+
+=head2 nicks
+
+=begin code :lang<raku>
+
+for $log.nicks.sort(*.key) -> (:key($nick), :value(@entries)) {
+    say "$nick has @entries.elems() entries";
+}
+
+=end code
+
+The C<nicks> instance method returns a C<Map> with the nicks seen
+for this log as keys, and a C<List> with entries that originated by
+that nick.
 
 =head2 problems
 
