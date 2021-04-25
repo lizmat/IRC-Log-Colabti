@@ -2,6 +2,12 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.7  2021-04-25T12:40:39+02:00
+    - Slurp files with "utf8-c8" encoding to be on the safe side
+    - Rename "hhmm" method to "seen-at"
+    - Add support new "hhmm" method that just is "hhmm:
+    - No longer use (still slow) sprintf
+
 0.0.6  2021-04-25T00:15:10+02:00
     - Add support for 'Kick' control messages
     - Add support for 'Topic' control messages

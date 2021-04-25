@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.6>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.7>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
@@ -12,11 +12,19 @@ class IRC::Log::Colabti:ver<0.0.6>:auth<cpan:ELIZABETH> {
         has Int $.ordinal is required;
         has Str $.nick    is required;
 
-        method hhmm() { sprintf '[%02d:%02d]', $!hour, $!minute }
+        method seen-at() {
+            '['
+              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ':'
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+              ~ ']'
+        }
+        method hhmm() { 
+            ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+        }
         method target() {
-            $!ordinal
-              ?? sprintf('%02d%02d-%d', $!hour, $!minute, $!ordinal)
-              !! sprintf('%02d%02d'   , $!hour, $!minute)
+            $!ordinal ?? "$.hhmm-$!ordinal" !! $.hhmm
         }
         method pos() {
             self.entries.first({ $_ =:= self }, :k)
@@ -24,42 +32,42 @@ class IRC::Log::Colabti:ver<0.0.6>:auth<cpan:ELIZABETH> {
     }
 
     class Joined does Entry {
-        method gist() { "$.hhmm *** $!nick joined" }
+        method gist() { "$.seen-at *** $!nick joined" }
     }
     class Left does Entry {
-        method gist() { "$.hhmm *** $!nick left" }
+        method gist() { "$.seen-at *** $!nick left" }
     }
     class Message does Entry {
         has Str $.text is required;
-        method gist() { "$.hhmm <$!nick> $!text" }
+        method gist() { "$.seen-at <$!nick> $!text" }
     }
     class Kick does Entry {
         has Str $.kickee;
         has Str $.spec;
         method gist() {
-            "$.hhmm *** $!kickee was kicked by $!nick $!spec"
+            "$.seen-at *** $!kickee was kicked by $!nick $!spec"
         }
     }
     class Mode does Entry {
         has Str $.flags;
         has Str @.nicks;
         method gist() {
-            "$.hhmm *** $!nick sets mode: $!flags @.nicks.join(" ")"
+            "$.seen-at *** $!nick sets mode: $!flags @.nicks.join(" ")"
         }
     }
     class Nick-Change does Entry {
         has Str $.new-nick is required;
         method gist() {
-            "$.hhmm *** $!nick is now known as $!new-nick"
+            "$.seen-at *** $!nick is now known as $!new-nick"
         }
     }
     class Self-Reference does Entry {
         has Str $.text is required;
-        method gist() { "$.hhmm * $!nick $!text" }
+        method gist() { "$.seen-at * $!nick $!text" }
     }
     class Topic does Entry {
         has Str $.text is required;
-        method gist() { "$.hhmm *** $!nick changes topic to: $!text" }
+        method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
     }
 
     method !accept(\type, |c --> Nil) {
@@ -173,7 +181,7 @@ class IRC::Log::Colabti:ver<0.0.6>:auth<cpan:ELIZABETH> {
       IO:D $file,
       Date() $date = $file.basename.split(".").head
     ) {
-        self.CREATE!INITIALIZE($file.slurp, $date)
+        self.CREATE!INITIALIZE($file.slurp(:enc("utf8-c8")), $date)
     }
 
     multi method new(Str:D $slurped, Date() $date) {
@@ -293,8 +301,7 @@ in the log.
 
 =head3 hhmm
 
-The representation for hour and minute used in the log: "[hh:mm]" for
-this entry.
+A string representation of the hour and the minute of this entry ("hhmm").
 
 =head3 hour
 
@@ -323,6 +330,11 @@ The position of this entry in the C<entries> of the C<log> of this entry.
 =head3 problems
 
 The C<problems> of the C<log> of this entry.
+
+=head3 seen-at
+
+The representation for hour and minute used in the log: "[hh:mm]" for
+this entry.
 
 =head3 target
 

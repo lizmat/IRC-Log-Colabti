@@ -97,7 +97,7 @@ Create the string representation of the entry as it originally occurred in the l
 
 ### hhmm
 
-The representation for hour and minute used in the log: "[hh:mm]" for this entry.
+A string representation of the hour and the minute of this entry ("hhmm").
 
 ### hour
 
@@ -126,6 +126,10 @@ The position of this entry in the `entries` of the `log` of this entry.
 ### problems
 
 The `problems` of the `log` of this entry.
+
+### seen-at
+
+The representation for hour and minute used in the log: "[hh:mm]" for this entry.
 
 ### target
 

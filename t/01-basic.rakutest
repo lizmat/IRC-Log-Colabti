@@ -11,7 +11,7 @@ my $nr-entries = +@entries;
 
 sub test-common($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     subtest $comment => {
-        plan 10;
+        plan 11;
 
         isa-ok $entry, IRC::Log::Colabti::{$class};
         is $entry.date,     $date,    "is date correct: $date";
@@ -23,8 +23,10 @@ sub test-common($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
 
         is +$entry.entries, $nr-entries,
           'is nr-entries correct';
-        is $entry.hhmm, sprintf('[%02s:%02d]',$hour,$minute),
+        is $entry.hhmm, sprintf('%02d%02d',$hour,$minute),
           'is .hhmm correct';
+        is $entry.seen-at, sprintf('[%02d:%02d]',$hour,$minute),
+          'is .seen-at correct';
         is $entry.target, (
           $ordinal
             ?? sprintf('%02s%02d-%d',$hour,$minute,$ordinal)
