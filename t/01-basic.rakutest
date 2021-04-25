@@ -5,7 +5,8 @@ my $filename = '2021-04-22';
 my $date     = $filename.Date;
 my $pos      = -1;
 
-my $log      = IRC::Log::Colabti.new($?FILE.IO.sibling($filename));
+my $path     = $?FILE.IO.sibling: $filename;
+my $log      = IRC::Log::Colabti.new: $path;
 my @entries    = $log.entries;
 my $nr-entries = +@entries;
 
@@ -35,7 +36,10 @@ sub test-common($entry, $class, $hour, $minute, $ordinal, $nick, $comment) {
     }
 }
 
-plan 16 + @entries;
+plan 17 + @entries;
+
+is-deeply IRC::Log::Colabti.IO2Date($path), $date,
+  'was the date elided correctly';
 
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
@@ -91,11 +95,7 @@ is-deeply $entry.spec, '(lizmat))',
 
 is +@entries, 0, 'did we see all the entries';
 
-$log = IRC::Log::Colabti.new(
-  $?FILE.IO.sibling($filename).slurp,
-  $filename.Date
-);
-
+$log = IRC::Log::Colabti.new: $path.slurp, $date;
 isa-ok $log, IRC::Log::Colabti;
 is +$log.entries, $nr-entries, 'did we get the correct number of entries';
 is-deeply $log.date, $date, 'is the date correct again';

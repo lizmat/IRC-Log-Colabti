@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.8>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.9>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has @.entries  is built(False);
     has @.problems is built(False);
@@ -184,11 +184,15 @@ class IRC::Log::Colabti:ver<0.0.8>:auth<cpan:ELIZABETH> {
         self
     }
 
+    method IO2Date(IO:D $path) {
+        try $path.basename.split(".").head.Date
+    }
+
     multi method new(
-      IO:D $file,
-      Date() $date = $file.basename.split(".").head
+      IO:D $path,
+      Date() $date = self.IO2Date($path)
     ) {
-        self.CREATE!INITIALIZE($file.slurp(:enc("utf8-c8")), $date)
+        self.CREATE!INITIALIZE($path.slurp(:enc("utf8-c8")), $date)
     }
 
     multi method new(Str:D $slurped, Date() $date) {
@@ -222,7 +226,7 @@ my $log = IRC::Log::Colabti.new($text, $date);
 IRC::Log::Colabti provides an interface to the IRC logs that are available
 from colabti.org (raw format).  
 
-=head1 METHODS
+=head1 CLASS METHODS
 
 =head2 new
 
@@ -244,6 +248,25 @@ and a C<Date> as the second parameter.
 
 Any lines that can not be interpreted, are ignored: they are available
 with the C<problems> method.
+
+=head2 IO2Date
+
+=begin code :lang<raku>
+
+with IRC::Log::Colabti.IO2Date($path) -> $date {
+    say "the date of $path is $date";
+}
+else {
+    say "$path does not appear to be a log file";
+}
+
+=end code
+
+The C<IO2Date> class method interpretes the given C<IO::Path> object
+and attempts to elide a C<Date> object from it.  It returns C<Nil> if
+it could not.
+
+=head1 INSTANCE METHODS
 
 =head2 entries
 

@@ -24,8 +24,8 @@ DESCRIPTION
 
 IRC::Log::Colabti provides an interface to the IRC logs that are available from colabti.org (raw format). 
 
-METHODS
-=======
+CLASS METHODS
+=============
 
 new
 ---
@@ -41,6 +41,23 @@ The `new` class method either takes an `IO` object as the first parameter, and a
 Or it will take a `Str` as the first parameter for the text of the log, and a `Date` as the second parameter.
 
 Any lines that can not be interpreted, are ignored: they are available with the `problems` method.
+
+IO2Date
+-------
+
+```raku
+with IRC::Log::Colabti.IO2Date($path) -> $date {
+    say "the date of $path is $date";
+}
+else {
+    say "$path does not appear to be a log file";
+}
+```
+
+The `IO2Date` class method interpretes the given `IO::Path` object and attempts to elide a `Date` object from it. It returns `Nil` if it could not.
+
+INSTANCE METHODS
+================
 
 entries
 -------
