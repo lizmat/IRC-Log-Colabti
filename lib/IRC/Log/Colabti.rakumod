@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.11>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.12>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -34,13 +34,16 @@ class IRC::Log::Colabti:ver<0.0.11>:auth<cpan:ELIZABETH> {
 
     class Joined does Entry {
         method gist() { "$.seen-at *** $!nick joined" }
+        method control(--> True) { }
     }
     class Left does Entry {
         method gist() { "$.seen-at *** $!nick left" }
+        method control(--> True) { }
     }
     class Message does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at <$!nick> $!text" }
+        method control(--> False) { }
     }
     class Kick does Entry {
         has Str $.kickee;
@@ -48,6 +51,7 @@ class IRC::Log::Colabti:ver<0.0.11>:auth<cpan:ELIZABETH> {
         method gist() {
             "$.seen-at *** $!kickee was kicked by $!nick $!spec"
         }
+        method control(--> True) { }
     }
     class Mode does Entry {
         has Str $.flags;
@@ -55,20 +59,24 @@ class IRC::Log::Colabti:ver<0.0.11>:auth<cpan:ELIZABETH> {
         method gist() {
             "$.seen-at *** $!nick sets mode: $!flags @.nicks.join(" ")"
         }
+        method control(--> True) { }
     }
     class Nick-Change does Entry {
         has Str $.new-nick is required;
         method gist() {
             "$.seen-at *** $!nick is now known as $!new-nick"
         }
+        method control(--> True) { }
     }
     class Self-Reference does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at * $!nick $!text" }
+        method control(--> False) { }
     }
     class Topic does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
+        method control(--> True) { }
     }
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
@@ -282,7 +290,9 @@ it could not.
 
 =begin code :lang<raku>
 
-.say for $log.entries;
+.say for $log.entries;                   # all entries
+
+.say for $log.entries.grep(!*.control);  # only actual conversation
 
 =end code
 
@@ -339,6 +349,11 @@ value is the actual line.
 
 All of the classes that are returned by the C<entries> methods, have
 the following methods in common:
+
+=head3 control
+
+Returns C<True> if this entry is a control message, not directly part
+of the conversation.  Else, it returns C<False>.
 
 =head3 date
 
@@ -437,6 +452,8 @@ that the user entered that resulted in this log entry.
 The new nick of the user that resulted in this log entry.
 
 =head2 IRC::Log::Colabti::Self-Reference
+
+=head3 text
 
 The text that the user entered that resulted in this log entry.
 

@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.12  2021-04-26T11:17:13+02:00
+    - Add support for the entry.control message
+
 0.0.11  2021-04-25T20:29:38+02:00
     - Make "nicks" setup non-lazy and a normal attribute
 
