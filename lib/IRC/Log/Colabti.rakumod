@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.12>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.13>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -34,16 +34,19 @@ class IRC::Log::Colabti:ver<0.0.12>:auth<cpan:ELIZABETH> {
 
     class Joined does Entry {
         method gist() { "$.seen-at *** $!nick joined" }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
     class Left does Entry {
         method gist() { "$.seen-at *** $!nick left" }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
     class Message does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at <$!nick> $!text" }
-        method control(--> False) { }
+        method control(    --> False) { }
+        method conversation(--> True) { }
     }
     class Kick does Entry {
         has Str $.kickee;
@@ -51,7 +54,8 @@ class IRC::Log::Colabti:ver<0.0.12>:auth<cpan:ELIZABETH> {
         method gist() {
             "$.seen-at *** $!kickee was kicked by $!nick $!spec"
         }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
     class Mode does Entry {
         has Str $.flags;
@@ -59,24 +63,28 @@ class IRC::Log::Colabti:ver<0.0.12>:auth<cpan:ELIZABETH> {
         method gist() {
             "$.seen-at *** $!nick sets mode: $!flags @.nicks.join(" ")"
         }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
     class Nick-Change does Entry {
         has Str $.new-nick is required;
         method gist() {
             "$.seen-at *** $!nick is now known as $!new-nick"
         }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
     class Self-Reference does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at * $!nick $!text" }
-        method control(--> False) { }
+        method control(    --> False) { }
+        method conversation(--> True) { }
     }
     class Topic does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
-        method control(--> True) { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
     }
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
@@ -354,6 +362,11 @@ the following methods in common:
 
 Returns C<True> if this entry is a control message, not directly part
 of the conversation.  Else, it returns C<False>.
+
+=head3 conversation
+
+Returns C<True> if this entry is part of a conversation (so B<not> a
+control messages).  Else, it returns C<False>.
 
 =head3 date
 

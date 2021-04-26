@@ -117,6 +117,10 @@ All of the classes that are returned by the `entries` methods, have the followin
 
 Returns `True` if this entry is a control message, not directly part of the conversation. Else, it returns `False`.
 
+### conversation
+
+Returns `True` if this entry is part of a conversation (so **not** a control messages). Else, it returns `False`.
+
 ### date
 
 The `Date` of this entry.
