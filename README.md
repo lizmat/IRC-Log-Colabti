@@ -171,7 +171,7 @@ The representation for hour and minute used in the log: "[hh:mm]" for this entry
 
 ### target
 
-Representation of an anchor in an HTML-file for deep linking to this entry.
+Representation of an anchor in an HTML-file for deep linking to this entry. Can also be used as a sort key across entries from multiple dates.
 
 IRC::Log::Colabti::Joined
 -------------------------

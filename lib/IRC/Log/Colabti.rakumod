@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.13>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.14>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -12,6 +12,22 @@ class IRC::Log::Colabti:ver<0.0.13>:auth<cpan:ELIZABETH> {
         has Int $.minute  is required;
         has Int $.ordinal is required;
         has Str $.nick    is required;
+        has Str $.target  is built(False);
+
+        method TWEAK(--> Nil) {
+            $!target := $.date
+              ~ ':'
+              ~ ($!ordinal
+                  ?? $!ordinal < 10
+                    ?? "$.hhmm-000$!ordinal"
+                    !! $!ordinal < 100
+                      ?? "$.hhmm-00$!ordinal"
+                      !! $!ordinal < 1000
+                        ?? "$.hhmm-0$!ordinal"
+                        !! "$.hhmm-$!ordinal"
+                  !! $.hhmm
+                )
+        }
 
         method seen-at() {
             '['
@@ -23,9 +39,6 @@ class IRC::Log::Colabti:ver<0.0.13>:auth<cpan:ELIZABETH> {
         method hhmm() { 
             ($!hour < 10 ?? "0$!hour" !! $!hour)
               ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
-        }
-        method target() {
-            $!ordinal ?? "$.hhmm-$!ordinal" !! $.hhmm
         }
         method pos() {
             self.entries.first({ $_ =:= self }, :k)
@@ -421,7 +434,8 @@ this entry.
 =head3 target
 
 Representation of an anchor in an HTML-file for deep linking to this
-entry.
+entry.  Can also be used as a sort key across entries from multiple
+dates.
 
 =head2 IRC::Log::Colabti::Joined
 

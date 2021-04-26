@@ -37,8 +37,8 @@ sub test-common(
           'is .seen-at correct';
         is $entry.target, (
           $ordinal
-            ?? sprintf('%02s%02d-%d',$hour,$minute,$ordinal)
-            !! sprintf('%02s%02d',$hour,$minute)
+            ?? sprintf("$date:%02s%02d-%04d",$hour,$minute,$ordinal)
+            !! sprintf("$date:%02s%02d",$hour,$minute)
         ), 'is .target correct';
     }
 }
