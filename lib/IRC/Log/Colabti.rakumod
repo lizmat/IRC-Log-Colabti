@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.14>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.15>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -96,8 +96,8 @@ class IRC::Log::Colabti:ver<0.0.14>:auth<cpan:ELIZABETH> {
     class Topic does Entry {
         has Str $.text is required;
         method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
+        method control(     --> True) { }
+        method conversation(--> True) { }
     }
 
     method !INITIALIZE(Str:D $slurped, Date:D $date) {
@@ -311,9 +311,9 @@ it could not.
 
 =begin code :lang<raku>
 
-.say for $log.entries;                   # all entries
+.say for $log.entries;                       # all entries
 
-.say for $log.entries.grep(!*.control);  # only actual conversation
+.say for $log.entries.grep(*.conversation);  # only actual conversation
 
 =end code
 
@@ -373,13 +373,27 @@ the following methods in common:
 
 =head3 control
 
-Returns C<True> if this entry is a control message, not directly part
-of the conversation.  Else, it returns C<False>.
+Returns C<True> if this entry is a control message.  Else, it returns C<False>.
+
+These entry types are considered control messages:
+
+    IRC::Log::Colabti::Joined
+    IRC::Log::Colabti::Left
+    IRC::Log::Colabti::Kick
+    IRC::Log::Colabti::Mode
+    IRC::Log::Colabti::Nick-Change
+    IRC::Log::Colabti::Topic
 
 =head3 conversation
 
-Returns C<True> if this entry is part of a conversation (so B<not> a
-control messages).  Else, it returns C<False>.
+Returns C<True> if this entry is part of a conversation.  Else, it returns
+C<False>.
+
+These entry types are considered conversational messages:
+
+    IRC::Log::Colabti::Message
+    IRC::Log::Colabti::Self-Reference
+    IRC::Log::Colabti::Topic
 
 =head3 date
 

@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.15  2021-04-27T20:44:29+02:00
+    - Make Topic control *and* conversational message
+
 0.0.14  2021-04-26T21:20:46+02:00
     - Make .target an attribute composed at TWEAK time
     - Also make sure that we can handle 1000+ unique ordinals.

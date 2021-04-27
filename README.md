@@ -63,9 +63,9 @@ entries
 -------
 
 ```raku
-.say for $log.entries;                   # all entries
+.say for $log.entries;                       # all entries
 
-.say for $log.entries.grep(!*.control);  # only actual conversation
+.say for $log.entries.grep(*.conversation);  # only actual conversation
 ```
 
 The `entries` instance method returns an array with entries from the log. It contains instances of one of the following classes:
@@ -115,11 +115,26 @@ All of the classes that are returned by the `entries` methods, have the followin
 
 ### control
 
-Returns `True` if this entry is a control message, not directly part of the conversation. Else, it returns `False`.
+Returns `True` if this entry is a control message. Else, it returns `False`.
+
+These entry types are considered control messages:
+
+    IRC::Log::Colabti::Joined
+    IRC::Log::Colabti::Left
+    IRC::Log::Colabti::Kick
+    IRC::Log::Colabti::Mode
+    IRC::Log::Colabti::Nick-Change
+    IRC::Log::Colabti::Topic
 
 ### conversation
 
-Returns `True` if this entry is part of a conversation (so **not** a control messages). Else, it returns `False`.
+Returns `True` if this entry is part of a conversation. Else, it returns `False`.
+
+These entry types are considered conversational messages:
+
+    IRC::Log::Colabti::Message
+    IRC::Log::Colabti::Self-Reference
+    IRC::Log::Colabti::Topic
 
 ### date
 
