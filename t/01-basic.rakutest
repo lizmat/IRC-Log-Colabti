@@ -44,7 +44,7 @@ sub test-common(
     }
 }
 
-plan 19 + @entries;
+plan 27 + @entries;
 
 is-deeply IRC::Log::Colabti.IO2Date($path), $date,
   'was the date elided correctly';
@@ -52,6 +52,9 @@ is-deeply IRC::Log::Colabti.IO2Date($path), $date,
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
 is +$log.problems, 0, 'did we see any problems';
+
+is $log.first-target, "2021-04-22:0536", 'is first target ok';
+is $log.last-target,  "2021-04-22:2350", 'is last target ok';
 
 my $entry = @entries.shift;
 test-common $entry, 'Joined', 5, 36, 0, 'MasterDuke', True, False,
@@ -89,12 +92,12 @@ is-deeply $entry.nicks, Array[Str].new('tyil'),
 
 $entry = @entries.shift;
 test-common $entry, 'Topic', 23, 48, 0, 'lizmat', True, True,
-  'test kick';
+  'test topic';
 is $entry.text, 'Perl Sucks!',
   'is the text ok';
 
 $entry = @entries.shift;
-test-common $entry, 'Kick', 23, 59, 0, 'tyil', True, False,
+test-common $entry, 'Kick', 23, 50, 0, 'tyil', True, False,
   'test kick';
 is $entry.kickee, 'lizmat',
   'is the kickee ok';
@@ -102,12 +105,6 @@ is-deeply $entry.spec, '(lizmat))',
   'is the spec ok';
 
 is +@entries, 0, 'did we see all the entries';
-
-$log = IRC::Log::Colabti.new: $path.slurp, $date;
-isa-ok $log, IRC::Log::Colabti;
-is +$log.entries, $nr-entries, 'did we get the correct number of entries';
-is-deeply $log.date, $date, 'is the date correct again';
-is +$log.problems, 0, 'did we see any problems';
 
 my %nicks := $log.nicks;
 is %nicks.elems, 7, 'did we see 7 nicks';
@@ -117,6 +114,38 @@ subtest 'test all known nicks' => {
         is +%nicks{$nick}, 1, "did we see $nick once";
     }
     is +%nicks<MasterDuke>, 2, "did we see MasterDuke twice";
+}
+
+my $slurped = IRC::Log::Colabti.new: $path.slurp, $date;
+isa-ok $slurped, IRC::Log::Colabti;
+is +$slurped.entries, $nr-entries, 'did we get the correct number of entries';
+is-deeply $slurped.date, $date, 'is the date correct again';
+is +$slurped.problems, 0, 'did we see any problems';
+
+$log.update($?FILE.IO.sibling: $filename ~ '-with-additions');
+is +$log.entries, $nr-entries + 2, 'did we get 2 extra enties';
+@entries = $log.entries.skip($nr-entries);
+$nr-entries += 2;
+
+$entry = @entries.shift;
+test-common $entry, 'Joined', 23, 53, 0, 'lizmat', True, False,
+  'test joining extra entry';
+
+$entry = @entries.shift;
+test-common $entry, 'Message', 23, 53, 1, 'lizmat', False, True,
+  'test message extra entry';
+is $entry.text, 'Thank you, I needed that :-)',
+  'is text ok in the message of extra entry';
+
+%nicks := $log.nicks;
+is %nicks.elems, 7, 'did we see 7 nicks again';
+subtest 'test all known nicks' => {
+    plan 7;
+    for <ChanServ lizmmat_ nine sena_kun tyil> -> $nick {
+        is +%nicks{$nick}, 1, "did we see $nick once again";
+    }
+    is +%nicks<MasterDuke>, 2, "did we see MasterDuke twice again";
+    is +%nicks<lizmat>, 3, "did we see lizmat thrice";
 }
 
 # vim: expandtab shiftwidth=4

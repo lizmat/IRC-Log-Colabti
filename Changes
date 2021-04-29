@@ -2,6 +2,10 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.16  2021-04-29T12:56:29+02:00
+    - Add .first-target / .last-target methods
+    - Add .update method for updating current log file
+
 0.0.15  2021-04-27T20:44:29+02:00
     - Make Topic control *and* conversational message
 

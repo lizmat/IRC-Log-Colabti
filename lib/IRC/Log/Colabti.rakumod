@@ -1,10 +1,14 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.15>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.16>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
     has      %.nicks;
+    has      %!state;  # hash with final state of internal parsing
+
+#-------------------------------------------------------------------------------
+# Expected messsage types
 
     role Entry {
         has     $.log     is required handles <entries date problems>;
@@ -100,27 +104,52 @@ class IRC::Log::Colabti:ver<0.0.15>:auth<cpan:ELIZABETH> {
         method conversation(--> True) { }
     }
 
-    method !INITIALIZE(Str:D $slurped, Date:D $date) {
+#-------------------------------------------------------------------------------
+# Main log parser logic
+
+    method !PARSE(Str:D $slurped, Date:D $date) {
         $!date       := $date;
 
-        my $last-hour   := -1;
-        my $last-minute := -1;
-        my $ordinal;
-        my int $linenr  = -1;
+        my $to-parse;
+        my $last-hour;
+        my $last-minute;
+        my Int $ordinal;
+        my int $linenr;
 
-        my @entries;
-        my %nicks;
+        # done a parse before, so we're adding new lines
+        if %!state -> %state {
+            $last-hour   := %state<last-hour>;
+            $last-minute := %state<last-minute>;
+            $ordinal      = %state<ordinal>;
+            $linenr       = %state<linenr>;
+            $to-parse    := $slurped.substr(%state<parsed>);
+        }
 
+        # first parse
+        else {
+            $last-hour   := -1;
+            $last-minute := -1;
+            $linenr       = -1;
+            $to-parse    := $slurped;
+        }
+
+        # we need a "push" that does not containerize
+        my int $accepted = @!entries - 1;
         method !accept(\object --> Nil) {
-            @entries.push: object;
-            %nicks{object.nick}.push: object;
+            @!entries[++$accepted] := object;
+            with %!nicks{object.nick} -> @entries-by-nick {
+                @entries-by-nick[@entries-by-nick.elems] := object;
+            }
+            else {
+                (%!nicks{object.nick} := [])[0] := object;
+            }
         }
 
         method !problem(Str:D $line, Str:D $reason --> Nil) {
             @!problems[@!problems.elems] := "Line $linenr: $reason" => $line;
         }
 
-        for $slurped.split("\n").grep({ ++$linenr; .chars }) -> $line {
+        for $to-parse.split("\n").grep({ ++$linenr; .chars }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
                 my $hour   := $line.substr(1,2).Int;
@@ -215,29 +244,51 @@ class IRC::Log::Colabti:ver<0.0.15>:auth<cpan:ELIZABETH> {
             }
         }
 
-        # store the immutable results
-        @!entries  := @entries.List;
-        %nicks{$_} .= List for %nicks.keys;
-        %!nicks := %nicks.Map;
+        # save current state in case of updates
+        %!state = :parsed($slurped.chars),
+          :$last-hour, :$last-minute, :$ordinal, :$linenr;
 
         self
     }
+
+#-------------------------------------------------------------------------------
+# Class methods
 
     method IO2Date(IO:D $path) {
         try $path.basename.split(".").head.Date
     }
 
-    multi method new(
+    multi method new(IRC::Log::Colabti:U:
       IO:D $path,
       Date() $date = self.IO2Date($path)
     ) {
-        self.CREATE!INITIALIZE($path.slurp(:enc("utf8-c8")), $date)
+        self.CREATE!PARSE($path.slurp(:enc("utf8-c8")), $date)
     }
 
-    multi method new(Str:D $slurped, Date() $date) {
-        self.CREATE!INITIALIZE($slurped, $date)
+    multi method new(IRC::Log::Colabti:U:
+      Str:D $slurped,
+      Date() $date
+    ) {
+        self.CREATE!PARSE($slurped, $date)
+    }
+
+#-------------------------------------------------------------------------------
+# Instance methods
+
+    method first-target(IRC::Log::Colabti:D:) { @!entries[0].target   }
+    method last-target( IRC::Log::Colabti:D:) { @!entries.tail.target }
+
+    multi method update(IRC::Log::Colabti:D: IO:D $path) {
+        self!PARSE($path.slurp(:enc("utf8-c8")), $!date)
+    }
+
+    multi method update(IRC::Log::Colabti:D: Str:D $slurped) {
+        self!PARSE($slurped, $!date)
     }
 }
+
+#-------------------------------------------------------------------------------
+# Documentation
 
 =begin pod
 
@@ -339,6 +390,26 @@ say $log.date;
 
 The C<date> instance method returns the C<Date> object for this log.
 
+=head2 first-target
+
+=begin code :lang<raku>
+
+say $first-target;  # 2021-04-23
+
+=end code
+
+The C<first-target> instance method returns the C<target> of the first entry.
+
+=head2 last-target
+
+=begin code :lang<raku>
+
+say $last-target;  # 2021-04-29
+
+=end code
+
+The C<last-target> instance method returns the C<target> of the last entry.
+
 =head2 nicks
 
 =begin code :lang<raku>
@@ -365,6 +436,20 @@ The C<problems> instance method returns an array with C<Pair>s of
 lines that could not be interpreted in the log.  The key is a string
 with the line number and a reason it could not be interpreted.  The
 value is the actual line.
+
+=head2 update
+
+=begin code :lang<raku>
+
+$log.update($filename.IO);  # add any entries added to file
+
+$log.update($slurped);      # add any entries added to string
+
+=end code
+
+The C<update> instance method allows updating a log with any additional
+entries.  This is primarily intended to allow for updating a log on the
+current date, as logs of previous dates should probably be deemed immutable.
 
 =head1 CLASSES
 

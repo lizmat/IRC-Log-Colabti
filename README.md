@@ -88,6 +88,24 @@ say $log.date;
 
 The `date` instance method returns the `Date` object for this log.
 
+first-target
+------------
+
+```raku
+say $first-target;  # 2021-04-23
+```
+
+The `first-target` instance method returns the `target` of the first entry.
+
+last-target
+-----------
+
+```raku
+say $last-target;  # 2021-04-29
+```
+
+The `last-target` instance method returns the `target` of the last entry.
+
 nicks
 -----
 
@@ -107,6 +125,17 @@ problems
 ```
 
 The `problems` instance method returns an array with `Pair`s of lines that could not be interpreted in the log. The key is a string with the line number and a reason it could not be interpreted. The value is the actual line.
+
+update
+------
+
+```raku
+$log.update($filename.IO);  # add any entries added to file
+
+$log.update($slurped);      # add any entries added to string
+```
+
+The `update` instance method allows updating a log with any additional entries. This is primarily intended to allow for updating a log on the current date, as logs of previous dates should probably be deemed immutable.
 
 CLASSES
 =======
