@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.19  2021-04-30T01:28:48+02:00
+    - Make .entries return an IterationBuffer for performance
+
 0.0.18  2021-04-29T23:06:49+02:00
     - Make target lazy again, it did not provide less memory footprint
     - Add hour, minute, ordinal back in

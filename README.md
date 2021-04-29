@@ -14,7 +14,7 @@ use IRC::Log::Colabti;
 my $log = IRC::Log::Colabti.new($filename.IO);
 
 say "Logs from $log.date()";
-.say for $log.entries;
+.say for $log.entries.List;
 
 my $log = IRC::Log::Colabti.new($text, $date);
 ```
@@ -63,12 +63,12 @@ entries
 -------
 
 ```raku
-.say for $log.entries;                       # all entries
+.say for $log.entries.List;                      # all entries
 
-.say for $log.entries.grep(*.conversation);  # only actual conversation
+.say for $log.entries.Seq.grep(*.conversation);  # only actual conversation
 ```
 
-The `entries` instance method returns an array with entries from the log. It contains instances of one of the following classes:
+The `entries` instance method returns an IterationBuffer with entries from the log. It contains instances of one of the following classes:
 
     IRC::Log::Colabti::Joined
     IRC::Log::Colabti::Left
@@ -110,12 +110,12 @@ nicks
 -----
 
 ```raku
-for $log.nicks.sort(*.key) -> (:key($nick), :value(@entries)) {
-    say "$nick has @entries.elems() entries";
+for $log.nicks.sort(*.key) -> (:key($nick), :value($entries)) {
+    say "$nick has $entries.elems() entries";
 }
 ```
 
-The `nicks` instance method returns a `Map` with the nicks seen for this log as keys, and a `List` with entries that originated by that nick.
+The `nicks` instance method returns a `Map` with the nicks seen for this log as keys, and an `IterationBuffer` with entries that originated by that nick.
 
 problems
 --------

@@ -7,7 +7,7 @@ my $pos      = -1;
 
 my $path     = $?FILE.IO.sibling: $filename;
 my $log      = IRC::Log::Colabti.new: $path;
-my @entries    = $log.entries;
+my @entries    = $log.entries.List;
 my $nr-entries = +@entries;
 
 sub test-common(
@@ -30,7 +30,7 @@ sub test-common(
         is-deeply $entry.conversation, $conversation,
           "is .conversation ok: $conversation";
 
-        is +$entry.entries, $nr-entries,
+        is +$entry.entries.elems, $nr-entries,
           'is nr-entries correct';
         is $entry.hhmm, sprintf('%02d%02d',$hour,$minute),
           'is .hhmm correct';
@@ -111,20 +111,20 @@ is %nicks.elems, 7, 'did we see 7 nicks';
 subtest 'test all known nicks' => {
     plan 7;
     for <ChanServ lizmat lizmmat_ nine sena_kun tyil> -> $nick {
-        is +%nicks{$nick}, 1, "did we see $nick once";
+        is %nicks{$nick}.elems, 1, "did we see $nick once";
     }
-    is +%nicks<MasterDuke>, 2, "did we see MasterDuke twice";
+    is %nicks<MasterDuke>.elems, 2, "did we see MasterDuke twice";
 }
 
 my $slurped = IRC::Log::Colabti.new: $path.slurp, $date;
 isa-ok $slurped, IRC::Log::Colabti;
-is +$slurped.entries, $nr-entries, 'did we get the correct number of entries';
+is $slurped.entries.elems, $nr-entries, 'did we get correct number of entries';
 is-deeply $slurped.date, $date, 'is the date correct again';
 is +$slurped.problems, 0, 'did we see any problems';
 
 $log.update($?FILE.IO.sibling: $filename ~ '-with-additions');
-is +$log.entries, $nr-entries + 2, 'did we get 2 extra enties';
-@entries = $log.entries.skip($nr-entries);
+is $log.entries.elems, $nr-entries + 2, 'did we get 2 extra enties';
+@entries = $log.entries.Seq.skip($nr-entries);
 $nr-entries += 2;
 
 $entry = @entries.shift;
@@ -142,10 +142,10 @@ is %nicks.elems, 7, 'did we see 7 nicks again';
 subtest 'test all known nicks' => {
     plan 7;
     for <ChanServ lizmmat_ nine sena_kun tyil> -> $nick {
-        is +%nicks{$nick}, 1, "did we see $nick once again";
+        is %nicks{$nick}.elems, 1, "did we see $nick once again";
     }
-    is +%nicks<MasterDuke>, 2, "did we see MasterDuke twice again";
-    is +%nicks<lizmat>, 3, "did we see lizmat thrice";
+    is %nicks<MasterDuke>.elems, 2, "did we see MasterDuke twice again";
+    is %nicks<lizmat>.elems, 3, "did we see lizmat thrice";
 }
 
 # vim: expandtab shiftwidth=4

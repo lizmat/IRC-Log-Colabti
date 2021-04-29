@@ -1,8 +1,8 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.19>:auth<cpan:ELIZABETH> {
     has Date $.date;
-    has      @.entries;
+    has      $.entries;
     has      @.problems;
     has      %.nicks;
     has      %!state;  # hash with final state of internal parsing
@@ -54,7 +54,7 @@ class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
               ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
         }
         method pos() {
-            self.entries.first({ $_ =:= self }, :k)
+            self.entries.List.first({ $_ =:= self }, :k)
         }
     }
 
@@ -120,8 +120,13 @@ class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
 #-------------------------------------------------------------------------------
 # Main log parser logic
 
+    method !INIT() {
+        $!entries := IterationBuffer.CREATE;
+        self
+    }
+
     method !PARSE(Str:D $slurped, Date:D $date) {
-        $!date       := $date;
+        $!date := $date;
 
         my $to-parse;
         my $last-hour;
@@ -147,14 +152,14 @@ class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
         }
 
         # we need a "push" that does not containerize
-        my int $accepted = @!entries - 1;
+        my int $accepted = $!entries.elems - 1;
         method !accept(\object --> Nil) {
-            @!entries[++$accepted] := object;
-            with %!nicks{object.nick} -> @entries-by-nick {
-                @entries-by-nick[@entries-by-nick.elems] := object;
+            with %!nicks{object.nick} -> $entries-by-nick {
+                $entries-by-nick.push($!entries.push(object));
             }
             else {
-                (%!nicks{object.nick} := [])[0] := object;
+                (%!nicks{object.nick} := IterationBuffer.CREATE)
+                  .push($!entries.push(object));
             }
         }
 
@@ -275,21 +280,21 @@ class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
       IO:D $path,
       Date() $date = self.IO2Date($path)
     ) {
-        self.CREATE!PARSE($path.slurp(:enc("utf8-c8")), $date)
+        self.CREATE!INIT!PARSE($path.slurp(:enc("utf8-c8")), $date)
     }
 
     multi method new(IRC::Log::Colabti:U:
       Str:D $slurped,
       Date() $date
     ) {
-        self.CREATE!PARSE($slurped, $date)
+        self.CREATE!INIT!PARSE($slurped, $date)
     }
 
 #-------------------------------------------------------------------------------
 # Instance methods
 
-    method first-target(IRC::Log::Colabti:D:) { @!entries[0].target   }
-    method last-target( IRC::Log::Colabti:D:) { @!entries.tail.target }
+    method first-target(IRC::Log::Colabti:D:) { $!entries[0].target   }
+    method last-target( IRC::Log::Colabti:D:) { $!entries.Seq.tail.target }
 
     multi method update(IRC::Log::Colabti:D: IO:D $path) {
         self!PARSE($path.slurp(:enc("utf8-c8")), $!date)
@@ -318,7 +323,7 @@ use IRC::Log::Colabti;
 my $log = IRC::Log::Colabti.new($filename.IO);
 
 say "Logs from $log.date()";
-.say for $log.entries;
+.say for $log.entries.List;
 
 my $log = IRC::Log::Colabti.new($text, $date);
 
@@ -375,14 +380,14 @@ it could not.
 
 =begin code :lang<raku>
 
-.say for $log.entries;                       # all entries
+.say for $log.entries.List;                      # all entries
 
-.say for $log.entries.grep(*.conversation);  # only actual conversation
+.say for $log.entries.Seq.grep(*.conversation);  # only actual conversation
 
 =end code
 
-The C<entries> instance method returns an array with entries from the
-log.  It contains instances of one of the following classes:
+The C<entries> instance method returns an IterationBuffer with entries from
+the log.  It contains instances of one of the following classes:
 
     IRC::Log::Colabti::Joined
     IRC::Log::Colabti::Left
@@ -427,15 +432,15 @@ The C<last-target> instance method returns the C<target> of the last entry.
 
 =begin code :lang<raku>
 
-for $log.nicks.sort(*.key) -> (:key($nick), :value(@entries)) {
-    say "$nick has @entries.elems() entries";
+for $log.nicks.sort(*.key) -> (:key($nick), :value($entries)) {
+    say "$nick has $entries.elems() entries";
 }
 
 =end code
 
 The C<nicks> instance method returns a C<Map> with the nicks seen
-for this log as keys, and a C<List> with entries that originated by
-that nick.
+for this log as keys, and an C<IterationBuffer> with entries that originated
+by that nick.
 
 =head2 problems
 
