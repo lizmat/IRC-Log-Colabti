@@ -2,6 +2,12 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.17  2021-04-29T21:36:59+02:00
+    - Remove hour, minute, ordinal attributes to reduce memory footprint
+    - Change target format to YYYY-MM-DDZHH:MM-OOOO
+    - Add .hour, .minute, .ordinal methods based on .target substrings
+    - Also base .date, .hhmm, .seen-at on .target substrings
+
 0.0.16  2021-04-29T12:56:29+02:00
     - Add .first-target / .last-target methods
     - Add .update method for updating current log file

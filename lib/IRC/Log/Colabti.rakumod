@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.16>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -11,39 +11,44 @@ class IRC::Log::Colabti:ver<0.0.16>:auth<cpan:ELIZABETH> {
 # Expected messsage types
 
     role Entry {
-        has     $.log     is required handles <entries date problems>;
-        has Int $.hour    is required;
-        has Int $.minute  is required;
-        has Int $.ordinal is required;
-        has Str $.nick    is required;
-        has Str $.target  is built(False);
+        has     $.log    is required is built(:bind);
+        has Str $.nick   is required is built(:bind);
+        has Str $.target is built(False);
 
-        method TWEAK(--> Nil) {
-            $!target := $.date
+        method TWEAK(int :$hour!, int :$minute!, int :$ordinal!) {
+            # sprintf is still very slow before RakuAST lands
+            $!target := $!log.date
+              ~ 'Z'
+              ~ ($hour < 10 ?? "0$hour" !! $hour)
               ~ ':'
-              ~ ($!ordinal
-                  ?? $!ordinal < 10
-                    ?? "$.hhmm-000$!ordinal"
-                    !! $!ordinal < 100
-                      ?? "$.hhmm-00$!ordinal"
-                      !! $!ordinal < 1000
-                        ?? "$.hhmm-0$!ordinal"
-                        !! "$.hhmm-$!ordinal"
-                  !! $.hhmm
-                )
+              ~ ($minute < 10 ?? "0$minute" !! $minute);
+
+            $!target := $!target ~ '-' ~ ($ordinal < 10
+              ?? "000$ordinal"
+              !! $ordinal < 100
+                ?? "00$ordinal"
+                !! $ordinal < 1000
+                  ?? "0$ordinal"
+                  !! $ordinal
+            ) if $ordinal;
         }
 
-        method seen-at() {
-            '['
-              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
-              ~ ':'
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
-              ~ ']'
+        method date()   { $!target.substr(0,10)     }
+        method hour()   { $!target.substr(11,2).Int }
+        method minute() { $!target.substr(14,2).Int }
+        method ordinal() {
+            if $!target.substr(17) -> $ordinal {
+                $ordinal.Int
+            }
+            else {
+                0
+            }
         }
-        method hhmm() { 
-            ($!hour < 10 ?? "0$!hour" !! $!hour)
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
-        }
+        method entries()  { $!log.entries  }
+        method problems() { $!log.problems }
+
+        method seen-at() { "[$!target.substr(11,5)]" }
+        method hhmm()    { $!target.substr(11,2) ~ $!target.substr(14,2) }
         method pos() {
             self.entries.first({ $_ =:= self }, :k)
         }
@@ -108,7 +113,7 @@ class IRC::Log::Colabti:ver<0.0.16>:auth<cpan:ELIZABETH> {
 # Main log parser logic
 
     method !PARSE(Str:D $slurped, Date:D $date) {
-        $!date       := $date;
+        $!date := $date;
 
         my $to-parse;
         my $last-hour;

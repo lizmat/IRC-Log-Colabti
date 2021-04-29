@@ -38,8 +38,8 @@ sub test-common(
           'is .seen-at correct';
         is $entry.target, (
           $ordinal
-            ?? sprintf("$date:%02s%02d-%04d",$hour,$minute,$ordinal)
-            !! sprintf("$date:%02s%02d",$hour,$minute)
+            ?? sprintf($date ~ 'Z%02s:%02d-%04d', $hour, $minute, $ordinal)
+            !! sprintf($date ~ 'Z%02s:%02d',      $hour, $minute)
         ), 'is .target correct';
     }
 }
@@ -53,8 +53,8 @@ isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
 is +$log.problems, 0, 'did we see any problems';
 
-is $log.first-target, "2021-04-22:0536", 'is first target ok';
-is $log.last-target,  "2021-04-22:2350", 'is last target ok';
+is $log.first-target, "2021-04-22Z05:36", 'is first target ok';
+is $log.last-target,  "2021-04-22Z23:50", 'is last target ok';
 
 my $entry = @entries.shift;
 test-common $entry, 'Joined', 5, 36, 0, 'MasterDuke', True, False,
