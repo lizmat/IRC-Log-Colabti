@@ -2,6 +2,12 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.18  2021-04-29T23:06:49+02:00
+    - Make target lazy again, it did not provide less memory footprint
+    - Add hour, minute, ordinal back in
+    - Remove "is required" from entry checks, they're not needed as internal
+    - Use native attributes where possible
+
 0.0.17  2021-04-29T21:36:59+02:00
     - Remove hour, minute, ordinal attributes to reduce memory footprint
     - Change target format to YYYY-MM-DDZHH:MM-OOOO

@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.18>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      @.entries;
     has      @.problems;
@@ -11,44 +11,48 @@ class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
 # Expected messsage types
 
     role Entry {
-        has     $.log    is required is built(:bind);
-        has Str $.nick   is required is built(:bind);
-        has Str $.target is built(False);
+        has     $.log     is built(:bind);
+        has int $.hour    is built(:bind);
+        has int $.minute  is built(:bind);
+        has str $.nick    is built(:bind);
+        has int $.ordinal is built(:bind);
+        has str $.target  is built(False);
 
-        method TWEAK(int :$hour!, int :$minute!, int :$ordinal!) {
-            # sprintf is still very slow before RakuAST lands
-            $!target := $!log.date
-              ~ 'Z'
-              ~ ($hour < 10 ?? "0$hour" !! $hour)
-              ~ ':'
-              ~ ($minute < 10 ?? "0$minute" !! $minute);
+        method target() {
+            unless $!target {
+                $!target = self.date
+                  ~ 'Z'
+                  ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
+                  ~ ':'
+                  ~ ($!minute < 10 ?? "0$!minute" !! $!minute);
 
-            $!target := $!target ~ '-' ~ ($ordinal < 10
-              ?? "000$ordinal"
-              !! $ordinal < 100
-                ?? "00$ordinal"
-                !! $ordinal < 1000
-                  ?? "0$ordinal"
-                  !! $ordinal
-            ) if $ordinal;
+                $!target = $!target ~ '-' ~ ($!ordinal < 10
+                  ?? "000$!ordinal"
+                  !! $!ordinal < 100
+                    ?? "00$!ordinal"
+                    !! $!ordinal < 1000
+                      ?? "0$!ordinal"
+                      !! $!ordinal
+                ) if $!ordinal;
+            }
+            $!target
         }
 
-        method date()   { $!target.substr(0,10)     }
-        method hour()   { $!target.substr(11,2).Int }
-        method minute() { $!target.substr(14,2).Int }
-        method ordinal() {
-            if $!target.substr(17) -> $ordinal {
-                $ordinal.Int
-            }
-            else {
-                0
-            }
-        }
+        method date()     { $!log.date     }
         method entries()  { $!log.entries  }
         method problems() { $!log.problems }
 
-        method seen-at() { "[$!target.substr(11,5)]" }
-        method hhmm()    { $!target.substr(11,2) ~ $!target.substr(14,2) }
+        method seen-at() {
+            '['
+              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ':'
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+              ~ ']'
+        }
+        method hhmm() { 
+            ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+        }
         method pos() {
             self.entries.first({ $_ =:= self }, :k)
         }
@@ -64,24 +68,27 @@ class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
         method control(      --> True) { }
         method conversation(--> False) { }
     }
-    class Message does Entry {
-        has Str $.text is required;
-        method gist() { "$.seen-at <$!nick> $!text" }
-        method control(    --> False) { }
-        method conversation(--> True) { }
-    }
     class Kick does Entry {
-        has Str $.kickee;
-        has Str $.spec;
+        has Str $.kickee is built(:bind);
+        has Str $.spec   is built(:bind);
+
         method gist() {
             "$.seen-at *** $!kickee was kicked by $!nick $!spec"
         }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
+    class Message does Entry {
+        has Str $.text is built(:bind);
+
+        method gist() { "$.seen-at <$!nick> $!text" }
+        method control(    --> False) { }
+        method conversation(--> True) { }
+    }
     class Mode does Entry {
-        has Str $.flags;
-        has Str @.nicks;
+        has Str $.flags is built(:bind);
+        has Str @.nicks is built(:bind);
+
         method gist() {
             "$.seen-at *** $!nick sets mode: $!flags @.nicks.join(" ")"
         }
@@ -89,7 +96,8 @@ class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
         method conversation(--> False) { }
     }
     class Nick-Change does Entry {
-        has Str $.new-nick is required;
+        has Str $.new-nick is built(:bind);
+
         method gist() {
             "$.seen-at *** $!nick is now known as $!new-nick"
         }
@@ -97,13 +105,13 @@ class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
         method conversation(--> False) { }
     }
     class Self-Reference does Entry {
-        has Str $.text is required;
+        has Str $.text is built(:bind);
         method gist() { "$.seen-at * $!nick $!text" }
         method control(    --> False) { }
         method conversation(--> True) { }
     }
     class Topic does Entry {
-        has Str $.text is required;
+        has Str $.text is built(:bind);
         method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
         method control(     --> True) { }
         method conversation(--> True) { }
@@ -113,7 +121,7 @@ class IRC::Log::Colabti:ver<0.0.17>:auth<cpan:ELIZABETH> {
 # Main log parser logic
 
     method !PARSE(Str:D $slurped, Date:D $date) {
-        $!date := $date;
+        $!date       := $date;
 
         my $to-parse;
         my $last-hour;
