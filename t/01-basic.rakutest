@@ -15,7 +15,7 @@ sub test-common(
   $comment,
 ) {
     subtest $comment => {
-        plan 13;
+        plan 14;
 
         isa-ok $entry, IRC::Log::Colabti::{$class};
         is $entry.date,     $date,    "is .date correct: $date";
@@ -34,6 +34,8 @@ sub test-common(
           'is nr-entries correct';
         is $entry.hhmm, sprintf('%02d%02d',$hour,$minute),
           'is .hhmm correct';
+        is $entry.hh-mm, sprintf('%02d:%02d',$hour,$minute),
+          'is .hh-mm correct';
         is $entry.seen-at, sprintf('[%02d:%02d]',$hour,$minute),
           'is .seen-at correct';
         is $entry.target, (

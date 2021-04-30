@@ -181,6 +181,10 @@ Create the string representation of the entry as it originally occurred in the l
 
 A string representation of the hour and the minute of this entry ("hhmm").
 
+### hh-mm
+
+A string representation of the hour and the minute of this entry ("hh:mm").
+
 ### hour
 
 The hour (in UTC) the entry was added to the log.

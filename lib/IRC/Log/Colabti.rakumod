@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.19>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      $.entries;
     has      @.problems;
@@ -51,6 +51,11 @@ class IRC::Log::Colabti:ver<0.0.19>:auth<cpan:ELIZABETH> {
         }
         method hhmm() { 
             ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+        }
+        method hh-mm() { 
+            ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ":"
               ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
         }
         method pos() {
@@ -514,6 +519,10 @@ in the log.
 =head3 hhmm
 
 A string representation of the hour and the minute of this entry ("hhmm").
+
+=head3 hh-mm
+
+A string representation of the hour and the minute of this entry ("hh:mm").
 
 =head3 hour
 
