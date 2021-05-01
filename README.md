@@ -193,6 +193,10 @@ The hour (in UTC) the entry was added to the log.
 
 The `IRC::Log::Colabti` object of which this entry is a part.
 
+### message
+
+The text representation of the entry.
+
 ### minute
 
 The minute (in UTC) the entry was added to the log.
@@ -209,13 +213,17 @@ Zero-based ordinal number of this entry within the minute it occurred.
 
 The position of this entry in the `entries` of the `log` of this entry.
 
+### prefix
+
+The prefix used in creating the `gist` of this entry.
+
 ### problems
 
 The `problems` of the `log` of this entry.
 
-### seen-at
+### sender
 
-The representation for hour and minute used in the log: "[hh:mm]" for this entry.
+A representation of the sender. Usually the same as `nick`, except for the `Self-Reference` class, as it is encoded in the `message` then.
 
 ### target
 

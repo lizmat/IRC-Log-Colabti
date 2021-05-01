@@ -15,7 +15,7 @@ sub test-common(
   $comment,
 ) {
     subtest $comment => {
-        plan 14;
+        plan 15;
 
         isa-ok $entry, IRC::Log::Colabti::{$class};
         is $entry.date,     $date,    "is .date correct: $date";
@@ -29,6 +29,12 @@ sub test-common(
           "is .control ok: $control";
         is-deeply $entry.conversation, $conversation,
           "is .conversation ok: $conversation";
+        is-deeply $entry.prefix eq '*** ', $entry.control,
+          "is the prefix as expected: $entry.prefix()";
+        is-deeply
+          $entry.sender,
+          $entry ~~ IRC::Log::Colabti::Self-Reference ?? '' !! $entry.nick,
+          "is the sender as expected: $entry.sender()";
 
         is +$entry.entries.elems, $nr-entries,
           'is nr-entries correct';
@@ -36,8 +42,6 @@ sub test-common(
           'is .hhmm correct';
         is $entry.hh-mm, sprintf('%02d:%02d',$hour,$minute),
           'is .hh-mm correct';
-        is $entry.seen-at, sprintf('[%02d:%02d]',$hour,$minute),
-          'is .seen-at correct';
         is $entry.target, (
           $ordinal
             ?? sprintf($date ~ 'Z%02s:%02d-%04d', $hour, $minute, $ordinal)

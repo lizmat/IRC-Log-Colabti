@@ -2,6 +2,11 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.21  2021-05-01T12:48:20+02:00
+    - Remove .seen-at method
+    - Add entry methods .message, .sender, .prefix
+    - Move .gist method to role, calling these methods
+
 0.0.20  2021-04-30T23:15:00+02:00
     - Add support for entry.hh-mm method
 

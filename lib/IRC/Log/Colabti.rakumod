@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      $.entries;
     has      @.problems;
@@ -42,13 +42,12 @@ class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
         method entries()  { $!log.entries  }
         method problems() { $!log.problems }
 
-        method seen-at() {
-            '['
-              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
-              ~ ':'
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
-              ~ ']'
+        method prefix(--> '*** ') { }
+        method gist() {
+            '[' ~ self.hh-mm ~ '] ' ~ self.prefix ~ self.message
         }
+        method sender() { $!nick }
+
         method hhmm() { 
             ($!hour < 10 ?? "0$!hour" !! $!hour)
               ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
@@ -64,12 +63,12 @@ class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
     }
 
     class Joined does Entry {
-        method gist() { "$.seen-at *** $!nick joined" }
+        method message() { "$!nick joined" }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
     class Left does Entry {
-        method gist() { "$.seen-at *** $!nick left" }
+        method message() { "$!nick left" }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
@@ -77,16 +76,15 @@ class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
         has Str $.kickee is built(:bind);
         has Str $.spec   is built(:bind);
 
-        method gist() {
-            "$.seen-at *** $!kickee was kicked by $!nick $!spec"
-        }
+        method message() { "$!kickee was kicked by $!nick $!spec" }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
     class Message does Entry {
         has Str $.text is built(:bind);
 
-        method gist() { "$.seen-at <$!nick> $!text" }
+        method prefix(--> '') { }
+        method message() { "<$!nick> $!text" }
         method control(    --> False) { }
         method conversation(--> True) { }
     }
@@ -94,30 +92,30 @@ class IRC::Log::Colabti:ver<0.0.20>:auth<cpan:ELIZABETH> {
         has Str $.flags is built(:bind);
         has Str @.nicks is built(:bind);
 
-        method gist() {
-            "$.seen-at *** $!nick sets mode: $!flags @.nicks.join(" ")"
-        }
+        method message() { "$!nick sets mode: $!flags @.nicks.join(" ")" }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
     class Nick-Change does Entry {
         has Str $.new-nick is built(:bind);
 
-        method gist() {
-            "$.seen-at *** $!nick is now known as $!new-nick"
-        }
+        method message() { "*** $!nick is now known as $!new-nick" }
         method control(      --> True) { }
         method conversation(--> False) { }
     }
     class Self-Reference does Entry {
         has Str $.text is built(:bind);
-        method gist() { "$.seen-at * $!nick $!text" }
+
+        method prefix(--> '* ') { }
+        method message() { "$!nick $!text" }
+        method sender(--> '') { }
         method control(    --> False) { }
         method conversation(--> True) { }
     }
     class Topic does Entry {
         has Str $.text is built(:bind);
-        method gist() { "$.seen-at *** $!nick changes topic to: $!text" }
+
+        method message() { "$!nick changes topic to: $!text" }
         method control(     --> True) { }
         method conversation(--> True) { }
     }
@@ -532,6 +530,10 @@ The hour (in UTC) the entry was added to the log.
 
 The C<IRC::Log::Colabti> object of which this entry is a part.
 
+=head3 message
+
+The text representation of the entry.
+
 =head3 minute
 
 The minute (in UTC) the entry was added to the log.
@@ -548,14 +550,18 @@ Zero-based ordinal number of this entry within the minute it occurred.
 
 The position of this entry in the C<entries> of the C<log> of this entry.
 
+=head3 prefix
+
+The prefix used in creating the C<gist> of this entry.
+
 =head3 problems
 
 The C<problems> of the C<log> of this entry.
 
-=head3 seen-at
+=head3 sender
 
-The representation for hour and minute used in the log: "[hh:mm]" for
-this entry.
+A representation of the sender.  Usually the same as C<nick>, except for
+the C<Self-Reference> class, as it is encoded in the C<message> then.
 
 =head3 target
 
