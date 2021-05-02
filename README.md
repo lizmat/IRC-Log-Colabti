@@ -223,7 +223,7 @@ The `problems` of the `log` of this entry.
 
 ### sender
 
-A representation of the sender. Usually the same as `nick`, except for the `Self-Reference` class, as it is encoded in the `message` then.
+A representation of the sender. The same as `nick` for the `Message` class, otherwise the empty string as then the nick is encoded in the `message`.
 
 ### target
 

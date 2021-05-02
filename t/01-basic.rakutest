@@ -33,7 +33,7 @@ sub test-common(
           "is the prefix as expected: $entry.prefix()";
         is-deeply
           $entry.sender,
-          $entry ~~ IRC::Log::Colabti::Self-Reference ?? '' !! $entry.nick,
+          $entry ~~ IRC::Log::Colabti::Message ?? $entry.nick !! '',
           "is the sender as expected: $entry.sender()";
 
         is +$entry.entries.elems, $nr-entries,

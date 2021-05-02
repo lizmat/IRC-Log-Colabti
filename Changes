@@ -2,6 +2,10 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.22  2021-05-02T13:43:20+02:00
+    - Give .new its own proto, for better error messaging
+    - Change .sender to only return nick for Message objects
+
 0.0.21  2021-05-01T12:48:20+02:00
     - Remove .seen-at method
     - Add entry methods .message, .sender, .prefix

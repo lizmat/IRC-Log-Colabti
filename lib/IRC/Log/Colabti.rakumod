@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      $.entries;
     has      @.problems;
@@ -14,28 +14,25 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
         has     $.log     is built(:bind);
         has int $.hour    is built(:bind);
         has int $.minute  is built(:bind);
-        has str $.nick    is built(:bind);
         has int $.ordinal is built(:bind);
-        has str $.target  is built(False);
+        has str $.nick    is built(:bind);
 
         method target() {
-            unless $!target {
-                $!target = self.date
-                  ~ 'Z'
-                  ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
-                  ~ ':'
-                  ~ ($!minute < 10 ?? "0$!minute" !! $!minute);
+            my $target = self.date
+              ~ 'Z'
+              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ':'
+              ~ ($!minute < 10 ?? "0$!minute" !! $!minute);
 
-                $!target = $!target ~ '-' ~ ($!ordinal < 10
-                  ?? "000$!ordinal"
-                  !! $!ordinal < 100
-                    ?? "00$!ordinal"
-                    !! $!ordinal < 1000
-                      ?? "0$!ordinal"
-                      !! $!ordinal
-                ) if $!ordinal;
-            }
-            $!target
+            $target = $target ~ '-' ~ ($!ordinal < 10
+              ?? "000$!ordinal"
+              !! $!ordinal < 100
+                ?? "00$!ordinal"
+                !! $!ordinal < 1000
+                  ?? "0$!ordinal"
+                  !! $!ordinal
+            ) if $!ordinal;
+            $target
         }
 
         method date()     { $!log.date     }
@@ -46,7 +43,10 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
         method gist() {
             '[' ~ self.hh-mm ~ '] ' ~ self.prefix ~ self.message
         }
-        method sender() { $!nick }
+
+        method sender(--> '') { }
+        method control(      --> True) { }
+        method conversation(--> False) { }
 
         method hhmm() { 
             ($!hour < 10 ?? "0$!hour" !! $!hour)
@@ -64,27 +64,22 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
 
     class Joined does Entry {
         method message() { "$!nick joined" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
     }
     class Left does Entry {
         method message() { "$!nick left" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
     }
     class Kick does Entry {
         has Str $.kickee is built(:bind);
         has Str $.spec   is built(:bind);
 
         method message() { "$!kickee was kicked by $!nick $!spec" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
     }
     class Message does Entry {
         has Str $.text is built(:bind);
 
+        method sender() { $!nick }
+        method message() { $!text }
         method prefix(--> '') { }
-        method message() { "<$!nick> $!text" }
         method control(    --> False) { }
         method conversation(--> True) { }
     }
@@ -93,22 +88,17 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
         has Str @.nicks is built(:bind);
 
         method message() { "$!nick sets mode: $!flags @.nicks.join(" ")" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
     }
     class Nick-Change does Entry {
         has Str $.new-nick is built(:bind);
 
-        method message() { "*** $!nick is now known as $!new-nick" }
-        method control(      --> True) { }
-        method conversation(--> False) { }
+        method message() { "$!nick is now known as $!new-nick" }
     }
     class Self-Reference does Entry {
         has Str $.text is built(:bind);
 
         method prefix(--> '* ') { }
         method message() { "$!nick $!text" }
-        method sender(--> '') { }
         method control(    --> False) { }
         method conversation(--> True) { }
     }
@@ -116,7 +106,6 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
         has Str $.text is built(:bind);
 
         method message() { "$!nick changes topic to: $!text" }
-        method control(     --> True) { }
         method conversation(--> True) { }
     }
 
@@ -279,6 +268,7 @@ class IRC::Log::Colabti:ver<0.0.21>:auth<cpan:ELIZABETH> {
         try $path.basename.split(".").head.Date
     }
 
+    proto method new(|) {*}
     multi method new(IRC::Log::Colabti:U:
       IO:D $path,
       Date() $date = self.IO2Date($path)
@@ -560,8 +550,9 @@ The C<problems> of the C<log> of this entry.
 
 =head3 sender
 
-A representation of the sender.  Usually the same as C<nick>, except for
-the C<Self-Reference> class, as it is encoded in the C<message> then.
+A representation of the sender.  The same as C<nick> for the C<Message>
+class, otherwise the empty string as then the nick is encoded in the
+C<message>.
 
 =head3 target
 
