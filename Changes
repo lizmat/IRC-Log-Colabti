@@ -2,6 +2,11 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.23  2021-05-02T14:49:34+02:00
+    - Condense hour/minute/ordinal into a single hmo attribute to
+      reduce the memory footprint of each entry by about 5%.  Which
+      may amount to quite a lot for channels with bigger log files.
+
 0.0.22  2021-05-02T13:43:20+02:00
     - Give .new its own proto, for better error messaging
     - Change .sender to only return nick for Message objects

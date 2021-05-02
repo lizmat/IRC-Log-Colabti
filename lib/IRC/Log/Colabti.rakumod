@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      $.entries;
     has      @.problems;
@@ -11,30 +11,35 @@ class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
 # Expected messsage types
 
     role Entry {
-        has     $.log     is built(:bind);
-        has int $.hour    is built(:bind);
-        has int $.minute  is built(:bind);
-        has int $.ordinal is built(:bind);
-        has str $.nick    is built(:bind);
+        has     $.log  is built(:bind);
+        has int $!hmo  is built(:bind);
+        has str $.nick is built(:bind);
 
         method target() {
+            my int $hour    = $.hour;
+            my int $minute  = $.minute;
+            my int $ordinal = $.ordinal;
+
             my $target = self.date
               ~ 'Z'
-              ~ ($!hour < 10 ?? "0$!hour" !! $!hour)
+              ~ ($hour < 10 ?? "0$hour" !! $hour)
               ~ ':'
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute);
+              ~ ($minute < 10 ?? "0$minute" !! $minute);
 
-            $target = $target ~ '-' ~ ($!ordinal < 10
-              ?? "000$!ordinal"
-              !! $!ordinal < 100
-                ?? "00$!ordinal"
-                !! $!ordinal < 1000
-                  ?? "0$!ordinal"
-                  !! $!ordinal
-            ) if $!ordinal;
+            $target = $target ~ '-' ~ ($ordinal < 10
+              ?? "000$ordinal"
+              !! $ordinal < 100
+                ?? "00$ordinal"
+                !! $ordinal < 1000
+                  ?? "0$ordinal"
+                  !! $ordinal
+            ) if $ordinal;
             $target
         }
 
+        method hour()     { $!hmo div 600000       }
+        method minute()   { $!hmo div 10000 mod 60 }
+        method ordinal()  { $!hmo mod 10000        }
         method date()     { $!log.date     }
         method entries()  { $!log.entries  }
         method problems() { $!log.problems }
@@ -49,13 +54,17 @@ class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
         method conversation(--> False) { }
 
         method hhmm() { 
-            ($!hour < 10 ?? "0$!hour" !! $!hour)
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+            my int $hour   = $.hour;
+            my int $minute = $.minute;
+            ($hour < 10 ?? "0$hour" !! $hour)
+              ~ ($minute < 10 ?? "0$minute" !! $minute)
         }
         method hh-mm() { 
-            ($!hour < 10 ?? "0$!hour" !! $!hour)
+            my int $hour   = $.hour;
+            my int $minute = $.minute;
+            ($hour < 10 ?? "0$hour" !! $hour)
               ~ ":"
-              ~ ($!minute < 10 ?? "0$!minute" !! $!minute)
+              ~ ($minute < 10 ?? "0$minute" !! $minute)
         }
         method pos() {
             self.entries.List.first({ $_ =:= self }, :k)
@@ -178,13 +187,15 @@ class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
                 if $text.starts-with('<') {
                     with $text.index('> ') -> $index {
                         self!accept: Message.new:
-                          :log(self), :$hour, :$minute, :$ordinal,
+                          :log(self),
+                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                     }
                     orwith $text.index('> ', :ignoremark) -> $index {
                         self!accept: Message.new:
-                          :log(self), :$hour, :$minute, :$ordinal,
+                          :log(self),
+                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                     }
@@ -195,7 +206,8 @@ class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
                 elsif $text.starts-with('* ') {
                     with $text.index(' ',2) -> $index {
                         self!accept: Self-Reference.new:
-                          :log(self), :$hour, :$minute, :$ordinal,
+                          :log(self),
+                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
                     }
@@ -209,36 +221,45 @@ class IRC::Log::Colabti:ver<0.0.22>:auth<cpan:ELIZABETH> {
                         my $message := $text.substr($index + 1);
                         if $$message eq 'joined' {
                             self!accept: Joined.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick;
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick;
                         }
                         elsif $message eq 'left' {
                             self!accept: Left.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick;
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick;
                         }
                         elsif $message.starts-with('is now known as ') {
                             self!accept: Nick-Change.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
-                              :new-nick($message.substr(16));
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick, :new-nick($message.substr(16));
                         }
                         elsif $message.starts-with('sets mode: ') {
                             my @nicks  = $message.substr(10).words;
                             my $flags := @nicks.shift;
                             self!accept: Mode.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
-                              :$flags, :@nicks;
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick, :$flags, :@nicks;
                         }
                         elsif $message.starts-with('changes topic to: ') {
                             self!accept: Topic.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
-                              :text($message.substr(18));
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick, :text($message.substr(18));
                         }
                         elsif $message.starts-with('was kicked by ') {
                             my $kickee := $nick;
                             my $index  := $message.index(' ', 14);
                             $nick      := $message.substr(14, $index - 14);
                             self!accept: Kick.new:
-                              :log(self), :$hour, :$minute, :$ordinal, :$nick,
-                              :$kickee, :spec($message.substr($index + 1));
+                              :log(self),
+                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :$nick, :$kickee,
+                              :spec($message.substr($index + 1));
                         }
                         else {
                             self!problem($line, 'unclear control message');
