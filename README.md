@@ -117,6 +117,24 @@ for $log.nicks.sort(*.key) -> (:key($nick), :value($entries)) {
 
 The `nicks` instance method returns a `Map` with the nicks seen for this log as keys, and an `IterationBuffer` with entries that originated by that nick.
 
+nr-control-entries
+------------------
+
+```raku
+say $log.nr-control-entries;
+```
+
+The `nr-control-entries` instance method returns an integer representing the number of control entries in this log. It is calculated lazily
+
+nr-conversation-entries
+-----------------------
+
+```raku
+say $log.nr-conversation-entries;
+```
+
+The `nr-conversation-entries` instance method returns an integer representing the number of conversation entries in this log.
+
 problems
 --------
 

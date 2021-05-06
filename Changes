@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.24  2021-05-06T13:19:07+02:00
+    - Add support for nr-(control|conversation)-entries
+
 0.0.23  2021-05-02T14:49:34+02:00
     - Condense hour/minute/ordinal into a single hmo attribute to
       reduce the memory footprint of each entry by about 5%.  Which

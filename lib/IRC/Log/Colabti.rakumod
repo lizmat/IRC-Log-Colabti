@@ -1,8 +1,10 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.24>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has      $.entries;
+    has int  $.nr-control-entries      is built(False);
+    has int  $.nr-conversation-entries is built(False);
     has      @.problems;
     has      %.nicks;
     has      %!state;  # hash with final state of internal parsing
@@ -191,6 +193,7 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                           :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
+                        ++$!nr-conversation-entries;
                     }
                     orwith $text.index('> ', :ignoremark) -> $index {
                         self!accept: Message.new:
@@ -198,6 +201,7 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                           :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
+                        ++$!nr-conversation-entries;
                     }
                     else {
                         self!problem($line,"could not find nick delimiter");
@@ -210,6 +214,7 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                           :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
+                        ++$!nr-conversation-entries;
                     }
                     else {
                         self!problem($line, "self-reference nick");
@@ -224,18 +229,21 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                               :log(self),
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick;
+                            ++$!nr-control-entries;
                         }
                         elsif $message eq 'left' {
                             self!accept: Left.new:
                               :log(self),
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick;
+                            ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('is now known as ') {
                             self!accept: Nick-Change.new:
                               :log(self),
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick, :new-nick($message.substr(16));
+                            ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('sets mode: ') {
                             my @nicks  = $message.substr(10).words;
@@ -244,12 +252,14 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                               :log(self),
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick, :$flags, :@nicks;
+                            ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('changes topic to: ') {
                             self!accept: Topic.new:
                               :log(self),
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick, :text($message.substr(18));
+                            ++$!nr-conversation-entries;
                         }
                         elsif $message.starts-with('was kicked by ') {
                             my $kickee := $nick;
@@ -260,6 +270,7 @@ class IRC::Log::Colabti:ver<0.0.23>:auth<cpan:ELIZABETH> {
                               :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
                               :$nick, :$kickee,
                               :spec($message.substr($index + 1));
+                            ++$!nr-control-entries;
                         }
                         else {
                             self!problem($line, 'unclear control message');
@@ -455,6 +466,28 @@ for $log.nicks.sort(*.key) -> (:key($nick), :value($entries)) {
 The C<nicks> instance method returns a C<Map> with the nicks seen
 for this log as keys, and an C<IterationBuffer> with entries that originated
 by that nick.
+
+=head2 nr-control-entries
+
+=begin code :lang<raku>
+
+say $log.nr-control-entries;
+
+=end code
+
+The C<nr-control-entries> instance method returns an integer representing
+the number of control entries in this log.  It is calculated lazily
+
+=head2 nr-conversation-entries
+
+=begin code :lang<raku>
+
+say $log.nr-conversation-entries;
+
+=end code
+
+The C<nr-conversation-entries> instance method returns an integer representing
+the number of conversation entries in this log.
 
 =head2 problems
 
