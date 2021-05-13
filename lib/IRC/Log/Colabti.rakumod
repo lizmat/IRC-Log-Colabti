@@ -1,10 +1,11 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.24>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
     has Date $.date;
+    has Str  $.raw;
     has      $.entries;
-    has int  $.nr-control-entries      is built(False);
-    has int  $.nr-conversation-entries is built(False);
+    has int  $.nr-control-entries;
+    has int  $.nr-conversation-entries;
     has      @.problems;
     has      %.nicks;
     has      %!state;  # hash with final state of internal parsing
@@ -129,6 +130,7 @@ class IRC::Log::Colabti:ver<0.0.24>:auth<cpan:ELIZABETH> {
     }
 
     method !PARSE(Str:D $slurped, Date:D $date) {
+        $!raw  := $slurped;
         $!date := $date;
 
         my $to-parse;
@@ -501,6 +503,18 @@ The C<problems> instance method returns an array with C<Pair>s of
 lines that could not be interpreted in the log.  The key is a string
 with the line number and a reason it could not be interpreted.  The
 value is the actual line.
+
+=head2 raw
+
+=begin code :lang<raku>
+
+say "contains 'foo'" if $log.raw.contains('foo');
+
+=end code
+
+The C<raw> instance method returns the raw text version of the log.  It can
+e.g. be used to do a quick check whether a string occurs in the raw text,
+before checking C<entries> for a given string.
 
 =head2 update
 

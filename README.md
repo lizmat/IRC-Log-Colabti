@@ -144,6 +144,15 @@ problems
 
 The `problems` instance method returns an array with `Pair`s of lines that could not be interpreted in the log. The key is a string with the line number and a reason it could not be interpreted. The value is the actual line.
 
+raw
+---
+
+```raku
+say "contains 'foo'" if $log.raw.contains('foo');
+```
+
+The `raw` instance method returns the raw text version of the log. It can e.g. be used to do a quick check whether a string occurs in the raw text, before checking `entries` for a given string.
+
 update
 ------
 

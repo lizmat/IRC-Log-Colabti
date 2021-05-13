@@ -50,7 +50,7 @@ sub test-common(
     }
 }
 
-plan 33 + @entries;
+plan 34 + @entries;
 
 is-deeply IRC::Log::Colabti.IO2Date($path), $date,
   'was the date elided correctly';
@@ -124,8 +124,10 @@ subtest 'test all known nicks' => {
     is %nicks<MasterDuke>.elems, 2, "did we see MasterDuke twice";
 }
 
-my $slurped = IRC::Log::Colabti.new: $path.slurp, $date;
+my $raw = $path.slurp;
+my $slurped = IRC::Log::Colabti.new: $raw, $date;
 isa-ok $slurped, IRC::Log::Colabti;
+is $slurped.raw, $raw, 'does the raw log match';
 is $slurped.entries.elems, $nr-entries, 'did we get correct number of entries';
 is-deeply $slurped.date, $date, 'is the date correct again';
 is +$slurped.problems, 0, 'did we see any problems';

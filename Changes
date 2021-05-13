@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.25  2021-05-13T16:43:06+02:00
+    - Add support for .raw method
+
 0.0.24  2021-05-06T13:19:07+02:00
     - Add support for nr-(control|conversation)-entries
 
