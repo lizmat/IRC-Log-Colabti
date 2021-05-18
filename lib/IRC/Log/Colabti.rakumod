@@ -1,6 +1,6 @@
 use v6.*;
 
-class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
+class IRC::Log::Colabti:ver<0.0.26>:auth<cpan:ELIZABETH> {
     has Date $.date;
     has Str  $.raw;
     has      $.entries;
@@ -15,8 +15,12 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
 
     role Entry {
         has     $.log  is built(:bind);
-        has int $!hmo  is built(:bind);
+        has int $!hmop is built(:bind);
         has str $.nick is built(:bind);
+
+        method TWEAK(int :$hour, int :$minute, int :$ordinal, int :$pos) {
+            $!hmop = $hour +< 56 + $minute +< 48 + $ordinal +< 32 + $pos;
+        }
 
         method target() {
             my int $hour    = $.hour;
@@ -40,9 +44,10 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
             $target
         }
 
-        method hour()     { $!hmo div 600000       }
-        method minute()   { $!hmo div 10000 mod 60 }
-        method ordinal()  { $!hmo mod 10000        }
+        method hour()     { $!hmop +> 56 +&   0xff }
+        method minute()   { $!hmop +> 48 +&   0xff }
+        method ordinal()  { $!hmop +> 32 +& 0xffff }
+        method pos()      { $!hmop       +& 0xffff }
         method date()     { $!log.date     }
         method entries()  { $!log.entries  }
         method problems() { $!log.problems }
@@ -68,9 +73,6 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
             ($hour < 10 ?? "0$hour" !! $hour)
               ~ ":"
               ~ ($minute < 10 ?? "0$minute" !! $minute)
-        }
-        method pos() {
-            self.entries.List.first({ $_ =:= self }, :k)
         }
     }
 
@@ -129,31 +131,33 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
         self
     }
 
-    method !PARSE(Str:D $slurped, Date:D $date) {
+    method parse(Str:D $slurped, Date:D $date) is implementation-detail {
         $!raw  := $slurped;
         $!date := $date;
 
         my $to-parse;
-        my $last-hour;
-        my $last-minute;
-        my Int $ordinal;
+        my int $last-hour;
+        my int $last-minute;
+        my int $ordinal;
         my int $linenr;
+        my int $pos;
 
         # done a parse before, so we're adding new lines
         if %!state -> %state {
-            $last-hour   := %state<last-hour>;
-            $last-minute := %state<last-minute>;
-            $ordinal      = %state<ordinal>;
-            $linenr       = %state<linenr>;
-            $to-parse    := $slurped.substr(%state<parsed>);
+            $last-hour   = %state<last-hour>;
+            $last-minute = %state<last-minute>;
+            $ordinal     = %state<ordinal>;
+            $linenr      = %state<linenr>;
+            $pos         = $!entries.elems;
+            $to-parse   := $slurped.substr(%state<parsed>);
         }
 
         # first parse
         else {
-            $last-hour   := -1;
-            $last-minute := -1;
-            $linenr       = -1;
-            $to-parse    := $slurped;
+            $last-hour   = -1;
+            $last-minute = -1;
+            $linenr      = -1;
+            $to-parse    = $slurped;
         }
 
         # we need a "push" that does not containerize
@@ -166,6 +170,7 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
                 (%!nicks{object.nick} := IterationBuffer.CREATE)
                   .push($!entries.push(object));
             }
+            ++$pos;
         }
 
         method !problem(Str:D $line, Str:D $reason --> Nil) {
@@ -175,32 +180,30 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
         for $to-parse.split("\n").grep({ ++$linenr; .chars }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
-                my $hour   := $line.substr(1,2).Int;
-                my $minute := $line.substr(4,2).Int;
-                my $text   := $line.substr(8);
+                my int $hour   = $line.substr(1,2).Int;
+                my int $minute = $line.substr(4,2).Int;
+                my $text      := $line.substr(8);
 
                 if $minute == $last-minute && $hour == $last-hour {
                     ++$ordinal;
                 }
                 else {
-                    $last-hour   := $hour;
-                    $last-minute := $minute;
-                    $ordinal = 0;
+                    $last-hour   = $hour;
+                    $last-minute = $minute;
+                    $ordinal     = 0;
                 }
 
                 if $text.starts-with('<') {
                     with $text.index('> ') -> $index {
                         self!accept: Message.new:
-                          :log(self),
-                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                          :log(self), :$hour, :$minute, :$ordinal, :$pos,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                         ++$!nr-conversation-entries;
                     }
                     orwith $text.index('> ', :ignoremark) -> $index {
                         self!accept: Message.new:
-                          :log(self),
-                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                          :log(self), :$hour, :$minute, :$ordinal, :$pos,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                         ++$!nr-conversation-entries;
@@ -212,8 +215,7 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
                 elsif $text.starts-with('* ') {
                     with $text.index(' ',2) -> $index {
                         self!accept: Self-Reference.new:
-                          :log(self),
-                          :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                          :log(self), :$hour, :$minute, :$ordinal, :$pos,
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
                         ++$!nr-conversation-entries;
@@ -228,22 +230,19 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
                         my $message := $text.substr($index + 1);
                         if $$message eq 'joined' {
                             self!accept: Joined.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick;
                             ++$!nr-control-entries;
                         }
                         elsif $message eq 'left' {
                             self!accept: Left.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick;
                             ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('is now known as ') {
                             self!accept: Nick-Change.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :new-nick($message.substr(16));
                             ++$!nr-control-entries;
                         }
@@ -251,15 +250,13 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
                             my @nicks  = $message.substr(10).words;
                             my $flags := @nicks.shift;
                             self!accept: Mode.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :$flags, :@nicks;
                             ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('changes topic to: ') {
                             self!accept: Topic.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :text($message.substr(18));
                             ++$!nr-conversation-entries;
                         }
@@ -268,8 +265,7 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
                             my $index  := $message.index(' ', 14);
                             $nick      := $message.substr(14, $index - 14);
                             self!accept: Kick.new:
-                              :log(self),
-                              :hmo(($hour * 60 + $minute) * 10000 + $ordinal),
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :$kickee,
                               :spec($message.substr($index + 1));
                             ++$!nr-control-entries;
@@ -307,28 +303,34 @@ class IRC::Log::Colabti:ver<0.0.25>:auth<cpan:ELIZABETH> {
       IO:D $path,
       Date() $date = self.IO2Date($path)
     ) {
-        self.CREATE!INIT!PARSE($path.slurp(:enc("utf8-c8")), $date)
+        self.CREATE!INIT.parse($path.slurp(:enc("utf8-c8")), $date)
     }
 
     multi method new(IRC::Log::Colabti:U:
       Str:D $slurped,
       Date() $date
     ) {
-        self.CREATE!INIT!PARSE($slurped, $date)
+        self.CREATE!INIT.parse($slurped, $date)
     }
 
 #-------------------------------------------------------------------------------
 # Instance methods
 
-    method first-target(IRC::Log::Colabti:D:) { $!entries[0].target   }
-    method last-target( IRC::Log::Colabti:D:) { $!entries.Seq.tail.target }
-
-    multi method update(IRC::Log::Colabti:D: IO:D $path) {
-        self!PARSE($path.slurp(:enc("utf8-c8")), $!date)
+    method first-target(IRC::Log::Colabti:D:) {
+        $!entries[0].target
+    }
+    method last-target(IRC::Log::Colabti:D:) {
+        $!entries[$!entries.elems - 1].target
+    }
+    method this-target(IRC::Log::Colabti:D: Str:D $target) {
+        $!entries.List.first($target eq *.target)
     }
 
+    multi method update(IRC::Log::Colabti:D: IO:D $path) {
+        self.parse($path.slurp(:enc("utf8-c8")), $!date)
+    }
     multi method update(IRC::Log::Colabti:D: Str:D $slurped) {
-        self!PARSE($slurped, $!date)
+        self.parse($slurped, $!date)
     }
 }
 

@@ -2,6 +2,16 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.26  2021-05-18T23:48:29+02:00
+    - Reorganize handling of hour/minute/ordinal/pos internally
+      "pos" is now part of the internal $!hmop attribute, so that
+      calling .pos on an entry is not dependent on the number of
+      entries, or the position of the entry in that days's entries.
+    - .new now needs to be called with :hour, :minute, :ordinal
+      and :pos attributes, thereby hiding how these are encoded
+      internally and make a move to a role more easy.
+    - Add .this-target for finding the entry with the given target
+
 0.0.25  2021-05-13T16:43:06+02:00
     - Add support for .raw method
 
