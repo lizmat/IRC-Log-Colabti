@@ -17,7 +17,7 @@ sub test-common(
     subtest $comment => {
         plan 15;
 
-        isa-ok $entry, IRC::Log::Colabti::{$class};
+        isa-ok $entry, IRC::Log::{$class};
         is $entry.date,     $date,    "is .date correct: $date";
         is $entry.hour,     $hour,    "is .hour correct: $hour";
         is $entry.minute,   $minute,  "is .minute correct: $minute";
@@ -33,7 +33,7 @@ sub test-common(
           "is the prefix as expected: $entry.prefix()";
         is-deeply
           $entry.sender,
-          $entry ~~ IRC::Log::Colabti::Message ?? $entry.nick !! '',
+          $entry ~~ IRC::Log::Message ?? $entry.nick !! '',
           "is the sender as expected: $entry.sender()";
 
         is +$entry.entries.elems, $nr-entries,

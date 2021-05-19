@@ -2,6 +2,10 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.27  2021-05-19T19:51:33+02:00
+    - Become a client of the new IRC::Log role, now that the API
+      basically has stabilized.
+
 0.0.26  2021-05-18T23:48:29+02:00
     - Reorganize handling of hour/minute/ordinal/pos internally
       "pos" is now part of the internal $!hmop attribute, so that

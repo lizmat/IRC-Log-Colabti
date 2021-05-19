@@ -6,6 +6,7 @@
   "build-depends": [
   ],
   "depends": [
+    "IRC::Log:ver<0.0.3>:auth<cpan:ELIZABETH>"
   ],
   "description": "interface to IRC logs from colabti.org",
   "license": "Artistic-2.0",
@@ -21,5 +22,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.26"
+  "version": "0.0.27"
 }
