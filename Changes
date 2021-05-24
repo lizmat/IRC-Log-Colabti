@@ -2,6 +2,11 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.28  2021-05-24T11:11:16+02:00
+    - Make sure .update handles changed files better, and make
+      the check for additional parsing more robust.
+    - Upped dependency on IRC::Log to 0.0.5
+
 0.0.27  2021-05-19T19:51:33+02:00
     - Become a client of the new IRC::Log role, now that the API
       basically has stabilized.

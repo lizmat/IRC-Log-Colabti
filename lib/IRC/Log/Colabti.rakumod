@@ -1,12 +1,17 @@
 use v6.*;
 
-use IRC::Log:ver<0.0.3>:auth<cpan:ELIZABETH>;
+use IRC::Log:ver<0.0.5>:auth<cpan:ELIZABETH>;
 
-class IRC::Log::Colabti:ver<0.0.27>:auth<cpan:ELIZABETH> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.28>:auth<cpan:ELIZABETH> does IRC::Log {
 
-    method parse(Str:D $slurped, Date:D $date) is implementation-detail {
-        $!raw  = $slurped;
+    method parse(IRC::Log::Colabti:D:
+      Str:D $slurped,
+      Date:D $date
+    ) is implementation-detail {
         $!date = $date;
+
+        # assume spurious event without change that caused update
+        return Nil if $!raw && $!raw eq $slurped;
 
         my $to-parse;
         my int $last-hour;
@@ -15,33 +20,47 @@ class IRC::Log::Colabti:ver<0.0.27>:auth<cpan:ELIZABETH> does IRC::Log {
         my int $linenr;
         my int $pos;
 
-        # done a parse before, so we're adding new lines
+        # done a parse before for this object
         if %!state -> %state {
-            $last-hour   = %state<last-hour>;
-            $last-minute = %state<last-minute>;
-            $ordinal     = %state<ordinal>;
-            $linenr      = %state<linenr>;
-            $pos         = $!entries.elems;
-            $to-parse   := $slurped.substr(%state<parsed>);
+
+            # adding new lines on log
+            if $slurped.starts-with($!raw) {
+                $last-hour   = %state<last-hour>;
+                $last-minute = %state<last-minute>;
+                $ordinal     = %state<ordinal>;
+                $linenr      = %state<linenr>;
+                $pos         = $!entries.elems;
+                $to-parse   := $slurped.substr($!raw.chars);
+            }
+
+            # log appears to be altered, run it from scratch!
+            else {
+                $!entries.clear;
+                %!nicks = @!problems = ();
+                $!nr-control-entries = $!nr-conversation-entries = 0;
+                $last-hour = $last-minute = $linenr = -1;
+                $to-parse  = $slurped;
+            }
         }
 
         # first parse
         else {
-            $last-hour   = -1;
-            $last-minute = -1;
-            $linenr      = -1;
-            $to-parse    = $slurped;
+            $last-hour = $last-minute = $linenr = -1;
+            $to-parse = $slurped;
         }
 
         # we need a "push" that does not containerize
-        my int $accepted = $!entries.elems - 1;
-        method !accept(\object --> Nil) {
-            with %!nicks{object.nick} -> $entries-by-nick {
-                $entries-by-nick.push($!entries.push(object));
+        my int $initial-nr-entries = $!entries.elems;
+        my int $accepted = $initial-nr-entries - 1;
+
+        # accept an entry
+        method !accept(\entry --> Nil) {
+            with %!nicks{entry.nick} -> $entries-by-nick {
+                $entries-by-nick.push($!entries.push(entry));
             }
             else {
-                (%!nicks{object.nick} := IterationBuffer.CREATE)
-                  .push($!entries.push(object));
+                (%!nicks{entry.nick} := IterationBuffer.CREATE)
+                  .push($!entries.push(entry));
             }
             ++$pos;
         }
@@ -158,10 +177,13 @@ class IRC::Log::Colabti:ver<0.0.27>:auth<cpan:ELIZABETH> does IRC::Log {
         }
 
         # save current state in case of updates
+        $!raw   = $slurped;
         %!state = :parsed($slurped.chars),
           :$last-hour, :$last-minute, :$ordinal, :$linenr;
 
-        self
+        $initial-nr-entries
+          ?? $!entries.elems - $initial-nr-entries
+          !! 0
     }
 }
 
