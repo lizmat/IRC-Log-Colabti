@@ -2,7 +2,7 @@ use v6.*;
 
 use IRC::Log:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Log::Colabti:ver<0.0.29>:auth<cpan:ELIZABETH> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.30>:auth<cpan:ELIZABETH> does IRC::Log {
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
@@ -11,7 +11,7 @@ class IRC::Log::Colabti:ver<0.0.29>:auth<cpan:ELIZABETH> does IRC::Log {
         $!date = $date;
 
         # assume spurious event without change that caused update
-        return Nil if $!raw && $!raw eq $slurped;
+        return Empty if $!raw && $!raw eq $slurped;
 
         my $to-parse;
         my int $last-hour;
@@ -181,9 +181,7 @@ class IRC::Log::Colabti:ver<0.0.29>:auth<cpan:ELIZABETH> does IRC::Log {
         %!state = :parsed($slurped.chars),
           :$last-hour, :$last-minute, :$ordinal, :$linenr;
 
-        $initial-nr-entries
-          ?? $!entries.elems - $initial-nr-entries
-          !! 0
+        $!entries.Seq.skip($initial-nr-entries)
     }
 }
 

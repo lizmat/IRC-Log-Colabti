@@ -50,10 +50,12 @@ sub test-common(
     }
 }
 
-plan 35 + @entries;
+plan 38 + @entries;
 
 is-deeply IRC::Log::Colabti.IO2Date($path), $date,
   'was the date elided correctly';
+is @entries.map(*.gist).join("\n"), $path.lines.map({ $_ if $_ }).join("\n"),
+  'does .gist generate the raw log again';
 
 isa-ok $log, IRC::Log::Colabti;
 is-deeply $log.date, $date, 'is the date correct';
@@ -138,8 +140,12 @@ is +$slurped.problems, 0, 'did we see any problems';
 is $slurped.nr-control-entries,      5, 'is nr control entries correct';
 is $slurped.nr-conversation-entries, 3, 'is nr conversation entries correct';
 
-$log.update($?FILE.IO.sibling: $filename ~ '-with-additions');
-is $log.entries.elems, $nr-entries + 2, 'did we get 2 extra enties';
+is $log.update($?FILE.IO.sibling: $filename).elems, 0,
+  'Did the update without changes indicate 0 entries were added?';
+
+is $log.update($?FILE.IO.sibling: $filename ~ '-with-additions').elems, 2,
+  'Did the update indicate 2 entries were added?';
+is $log.entries.elems, $nr-entries + 2, 'did we really get 2 extra entries';
 is $log.nr-control-entries,      6, 'is nr control entries correct';
 is $log.nr-conversation-entries, 4, 'is nr conversation entries correct';
 @entries = $log.entries.Seq.skip($nr-entries);

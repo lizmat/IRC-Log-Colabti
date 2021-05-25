@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.30  2021-05-25T22:11:14+02:00
+    - Make .parse return the actual entries that were added, as a Seq
+
 0.0.29  2021-05-25T17:56:59+02:00
     - Upped dependency on IRC::Log to 0.0.6 to get Message.gist fix
 
