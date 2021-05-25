@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.29  2021-05-25T17:56:59+02:00
+    - Upped dependency on IRC::Log to 0.0.6 to get Message.gist fix
+
 0.0.28  2021-05-24T11:11:16+02:00
     - Make sure .update handles changed files better, and make
       the check for additional parsing more robust.

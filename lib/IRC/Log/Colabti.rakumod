@@ -1,8 +1,8 @@
 use v6.*;
 
-use IRC::Log:ver<0.0.5>:auth<cpan:ELIZABETH>;
+use IRC::Log:ver<0.0.6>:auth<cpan:ELIZABETH>;
 
-class IRC::Log::Colabti:ver<0.0.28>:auth<cpan:ELIZABETH> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.29>:auth<cpan:ELIZABETH> does IRC::Log {
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
