@@ -115,7 +115,7 @@ test-common $entry, 'Kick', 23, 50, 0, 'tyil', True, False,
   'test kick';
 is $entry.kickee, 'lizmat',
   'is the kickee ok';
-is-deeply $entry.spec, '(lizmat))',
+is-deeply $entry.spec, '(lizmat)',
   'is the spec ok';
 
 is +@entries, 0, 'did we see all the entries';
