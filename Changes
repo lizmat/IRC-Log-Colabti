@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.32  2021-08-20T13:30:41+02:00
+    - Up dependency on IRC::Log to get support for .last-topic-change
+
 0.0.31  2021-06-09T22:39:25+02:00
     - Up dependency on IRC::Log to get support for .next / .prev
     - Add tests for .next / .prev
