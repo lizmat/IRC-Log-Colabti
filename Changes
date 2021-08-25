@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.33  2021-08-25T22:43:09+02:00
+    - Fix some kind of issue with aliasing with last-topic-change
+
 0.0.32  2021-08-20T13:30:41+02:00
     - Up dependency on IRC::Log to get support for .last-topic-change
 

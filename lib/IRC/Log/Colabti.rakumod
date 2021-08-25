@@ -2,7 +2,7 @@ use v6.*;
 
 use IRC::Log:ver<0.0.9>:auth<cpan:ELIZABETH>;
 
-class IRC::Log::Colabti:ver<0.0.32>:auth<cpan:ELIZABETH> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.33>:auth<cpan:ELIZABETH> does IRC::Log {
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
@@ -147,10 +147,11 @@ class IRC::Log::Colabti:ver<0.0.32>:auth<cpan:ELIZABETH> does IRC::Log {
                             ++$!nr-control-entries;
                         }
                         elsif $message.starts-with('changes topic to: ') {
-                            self!accept:
-                              $!last-topic-change = IRC::Log::Topic.new:
-                                :log(self), :$hour, :$minute, :$ordinal, :$pos,
-                                :$nick, :text($message.substr(18));
+                            my $topic := IRC::Log::Topic.new:
+                              :log(self), :$hour, :$minute, :$ordinal, :$pos,
+                              :$nick, :text($message.substr(18));
+                            self!accept: $topic;
+                            $!last-topic-change = $topic;
                             ++$!nr-conversation-entries;
                         }
                         elsif $message.starts-with('was kicked by ') {
