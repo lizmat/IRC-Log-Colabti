@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.35  2021-09-07T22:36:46+02:00
+    - Argh, forgot to update dependency in META
+
 0.0.34  2021-09-07T22:27:30+02:00
     - Migrate to zef ecosystem, update dependency
     - Update email address
