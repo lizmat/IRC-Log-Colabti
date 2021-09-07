@@ -1,8 +1,8 @@
 use v6.*;
 
-use IRC::Log:ver<0.0.9>:auth<cpan:ELIZABETH>;
+use IRC::Log:ver<0.0.10>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.33>:auth<cpan:ELIZABETH> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.34>:auth<zef:lizmat> does IRC::Log {
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
@@ -218,7 +218,7 @@ from colabti.org (raw format).  Please see L<IRC::Log> for more information.
 
 =head1 AUTHOR
 
-Elizabeth Mattijsen <liz@wenzperl.nl>
+Elizabeth Mattijsen <liz@raku.rocks>
 
 Source can be located at: https://github.com/lizmat/IRC-Log-Colabti .
 Comments and Pull Requests are welcome.
