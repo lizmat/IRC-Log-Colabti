@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.36  2021-10-23T14:26:35+02:00
+    - Update dependency
+
 0.0.35  2021-09-07T22:36:46+02:00
     - Argh, forgot to update dependency in META
 

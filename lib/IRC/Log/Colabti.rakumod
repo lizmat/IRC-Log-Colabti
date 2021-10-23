@@ -1,8 +1,8 @@
 use v6.*;
 
-use IRC::Log:ver<0.0.10>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.11>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.35>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
