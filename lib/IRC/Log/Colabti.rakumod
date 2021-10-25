@@ -1,8 +1,23 @@
 use v6.*;
 
-use IRC::Log:ver<0.0.11>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.13>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.37>:auth<zef:lizmat> does IRC::Log {
+
+    # accept an entry
+    method !accept(\entry --> Nil) {
+        with %!nicks{entry.nick} -> $entries-by-nick {
+            $entries-by-nick.push($!entries.push(entry));
+        }
+        else {
+            (%!nicks{entry.nick} := IterationBuffer.CREATE)
+              .push($!entries.push(entry));
+        }
+    }
+
+    method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
+        @!problems[@!problems.elems] := "Line $linenr: $reason" => $line;
+    }
 
     method parse(IRC::Log::Colabti:D:
       Str:D $slurped,
@@ -53,22 +68,6 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
         my int $initial-nr-entries = $!entries.elems;
         my int $accepted = $initial-nr-entries - 1;
 
-        # accept an entry
-        method !accept(\entry --> Nil) {
-            with %!nicks{entry.nick} -> $entries-by-nick {
-                $entries-by-nick.push($!entries.push(entry));
-            }
-            else {
-                (%!nicks{entry.nick} := IterationBuffer.CREATE)
-                  .push($!entries.push(entry));
-            }
-            ++$pos;
-        }
-
-        method !problem(Str:D $line, Str:D $reason --> Nil) {
-            @!problems[@!problems.elems] := "Line $linenr: $reason" => $line;
-        }
-
         for $to-parse.split("\n").grep({ ++$linenr; .chars }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
@@ -92,6 +91,7 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                         ++$!nr-conversation-entries;
+                        ++$pos;
                     }
                     orwith $text.index('> ', :ignoremark) -> $index {
                         self!accept: IRC::Log::Message.new:
@@ -99,9 +99,11 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
                         ++$!nr-conversation-entries;
+                        ++$pos;
                     }
                     else {
-                        self!problem($line,"could not find nick delimiter");
+                        self!problem($line, $linenr,
+                          "could not find nick delimiter");
                     }
                 }
                 elsif $text.starts-with('* ') {
@@ -111,9 +113,11 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
                         ++$!nr-conversation-entries;
+                        ++$pos;
                     }
                     else {
-                        self!problem($line, "self-reference nick");
+                        self!problem($line, $linenr,
+                          "self-reference nick");
                     }
                 }
                 elsif $text.starts-with('*** ') {
@@ -125,18 +129,21 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                               :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick;
                             ++$!nr-control-entries;
+                            ++$pos;
                         }
                         elsif $message eq 'left' {
                             self!accept: IRC::Log::Left.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick;
                             ++$!nr-control-entries;
+                            ++$pos;
                         }
                         elsif $message.starts-with('is now known as ') {
                             self!accept: IRC::Log::Nick-Change.new:
                               :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :new-nick($message.substr(16));
                             ++$!nr-control-entries;
+                            ++$pos;
                         }
                         elsif $message.starts-with('sets mode: ') {
                             my @nicks  = $message.substr(10).words;
@@ -145,6 +152,7 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                               :log(self), :$hour, :$minute, :$ordinal, :$pos,
                               :$nick, :$flags, :@nicks;
                             ++$!nr-control-entries;
+                            ++$pos;
                         }
                         elsif $message.starts-with('changes topic to: ') {
                             my $topic := IRC::Log::Topic.new:
@@ -153,6 +161,7 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                             self!accept: $topic;
                             $!last-topic-change = $topic;
                             ++$!nr-conversation-entries;
+                            ++$pos;
                         }
                         elsif $message.starts-with('was kicked by ') {
                             my $kickee := $nick;
@@ -163,18 +172,22 @@ class IRC::Log::Colabti:ver<0.0.36>:auth<zef:lizmat> does IRC::Log {
                               :$nick, :$kickee,
                               :spec($message.substr($index + 1));
                             ++$!nr-control-entries;
+                            ++$pos;
                         }
                         else {
-                            self!problem($line, 'unclear control message');
+                            self!problem($line, $linenr,
+                              'unclear control message');
                         }
                     }
                     else {
-                        self!problem($line, "self-reference nick");
+                        self!problem($line, $linenr,
+                          "self-reference nick");
                     }
                 }
             }
             elsif $line.trim.chars {
-                self!problem($line, "no timestamp found");
+                self!problem($line, $linenr,
+                  "no timestamp found");
             }
         }
 
