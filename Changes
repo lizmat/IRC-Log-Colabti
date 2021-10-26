@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.38  2021-10-26T23:01:09+02:00
+    - Update dependency to fix issue with .target
+
 0.0.37  2021-10-25T23:36:25+02:00
     - Update dependency
     - Work around issue that causes .pos values to be corrupted
