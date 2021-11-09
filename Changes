@@ -2,6 +2,10 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.39  2021-11-10T00:54:06+01:00
+    - Upped dependency on IRC::Log and the consequent refactor in
+      the parse logic (largely a simplification, fortunately).
+
 0.0.38  2021-10-26T23:01:09+02:00
     - Update dependency to fix issue with .target
 
