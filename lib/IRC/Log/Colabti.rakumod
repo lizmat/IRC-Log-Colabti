@@ -1,61 +1,24 @@
-use IRC::Log:ver<0.0.15>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.16>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.39>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.40>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
     }
 
-    method parse(IRC::Log::Colabti:D:
-       Str:D $text,
-      Date:D $date
-    ) is implementation-detail {
-        $!date = $date;
+    method parse-log(IRC::Log::Colabti:D:
+      str $text,
+          $last-hour   is raw,
+          $last-minute is raw,
+          $ordinal     is raw,
+          $linenr      is raw,
+    --> Nil) is implementation-detail {
 
-        # assume spurious event without change that caused update
-        return Empty if $!raw && $!raw eq $text;
-
-        my $to-parse;
-        my int $last-hour;
-        my int $last-minute;
-        my int $ordinal;
-        my int $linenr;
-
-        # done a parse before for this object
-        if %!state -> %state {
-
-            # adding new lines on log
-            if $text.starts-with($!raw) {
-                $last-hour   = %state<last-hour>;
-                $last-minute = %state<last-minute>;
-                $ordinal     = %state<ordinal>;
-                $linenr      = %state<linenr>;
-                $to-parse   := $text.substr($!raw.chars);
-            }
-
-            # log appears to be altered, run it from scratch!
-            else {
-                self.clear;
-                $last-hour = $last-minute = $linenr = -1;
-                $to-parse  = $text;
-            }
-        }
-
-        # first parse
-        else {
-            $last-hour = $last-minute = $linenr = -1;
-            $to-parse = $text;
-        }
-
-        # we need a "push" that does not containerize
-        my int $initial-nr-entries = $!entries.elems;
-        my int $accepted = $initial-nr-entries - 1;
-
-        for $to-parse.split("\n").grep({ ++$linenr; .chars }) -> $line {
+        for $text.split("\n").map({ ++$linenr; $_ if .chars }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
-                my int $hour   = $line.substr(1,2).Int;
-                my int $minute = $line.substr(4,2).Int;
+                my int $hour   = my str $ = $line.substr(1,2);  # fast Str to
+                my int $minute = my str $ = $line.substr(4,2);  # int conversion
                 my $text      := $line.substr(8);
 
                 if $minute == $last-minute && $hour == $last-hour {
@@ -153,13 +116,6 @@ class IRC::Log::Colabti:ver<0.0.39>:auth<zef:lizmat> does IRC::Log {
                   "no timestamp found");
             }
         }
-
-        # save current state in case of updates
-        $!raw   = $text;
-        %!state = :parsed($text.chars),
-          :$last-hour, :$last-minute, :$ordinal, :$linenr;
-
-        $!entries.Seq.skip($initial-nr-entries)
     }
 }
 
