@@ -1,6 +1,8 @@
 Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
+
+0.0.41  2021-11-15T12:40:36+01:00
     - Upped dependency on IRC::Log
     - Added tests for .search functionality
 
