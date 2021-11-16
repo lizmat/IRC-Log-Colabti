@@ -1,6 +1,6 @@
-use IRC::Log:ver<0.0.17>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.18>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.42>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
@@ -8,10 +8,12 @@ class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
 
     method parse-log(IRC::Log::Colabti:D:
       str $text,
-          $last-hour   is raw,
-          $last-minute is raw,
-          $ordinal     is raw,
-          $linenr      is raw,
+          $last-hour               is raw,
+          $last-minute             is raw,
+          $ordinal                 is raw,
+          $linenr                  is raw,
+          $nr-control-entries      is raw,
+          $nr-conversation-entries is raw,
     --> Nil) is implementation-detail {
 
         for $text.split("\n").map({ ++$linenr; $_ if .chars }) -> $line {
@@ -36,12 +38,14 @@ class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
                           :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
+                        ++$nr-conversation-entries;
                     }
                     orwith $text.index('> ', :ignoremark) -> $index {
                         IRC::Log::Message.new:
                           :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(1,$index - 1)),
                           :text($text.substr($index + 2));
+                        ++$nr-conversation-entries;
                     }
                     else {
                         self!problem($line, $linenr,
@@ -54,6 +58,7 @@ class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
                           :log(self), :$hour, :$minute, :$ordinal,
                           :nick($text.substr(2,$index - 2)),
                           :text($text.substr($index + 1));
+                        ++$nr-conversation-entries;
                     }
                     else {
                         self!problem($line, $linenr,
@@ -68,28 +73,34 @@ class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
                             IRC::Log::Joined.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick;
+                            ++$nr-control-entries;
                         }
                         elsif $message eq 'left' {
                             IRC::Log::Left.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick;
+                            ++$nr-control-entries;
                         }
                         elsif $message.starts-with('is now known as ') {
                             IRC::Log::Nick-Change.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick, :new-nick($message.substr(16));
+                            ++$nr-control-entries;
                         }
                         elsif $message.starts-with('sets mode: ') {
-                            my @nicks  = $message.substr(10).words;
-                            my $flags := @nicks.shift;
+                            my @nick-names = $message.substr(10).words;
+                            my $flags     := @nick-names.shift;
                             IRC::Log::Mode.new:
                               :log(self), :$hour, :$minute, :$ordinal,
-                              :$nick, :$flags, :@nicks;
+                              :$nick, :$flags, :@nick-names;
+                            ++$nr-control-entries;
                         }
                         elsif $message.starts-with('changes topic to: ') {
                             self.last-topic-change = IRC::Log::Topic.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick, :text($message.substr(18));
+                            ++$nr-control-entries;
+                            ++$nr-conversation-entries;
                         }
                         elsif $message.starts-with('was kicked by ') {
                             my $kickee := $nick;
@@ -99,6 +110,7 @@ class IRC::Log::Colabti:ver<0.0.41>:auth<zef:lizmat> does IRC::Log {
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick, :$kickee,
                               :spec($message.substr($index + 1));
+                            ++$nr-control-entries;
                         }
                         else {
                             self!problem($line, $linenr,
