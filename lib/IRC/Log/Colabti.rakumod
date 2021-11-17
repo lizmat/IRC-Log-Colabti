@@ -1,6 +1,6 @@
-use IRC::Log:ver<0.0.18>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.19>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.42>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.43>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
