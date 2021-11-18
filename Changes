@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.44  2021-11-18T12:03:01+01:00
+    - Upped dependency on IRC::Log for handling empty logs
+
 0.0.43  2021-11-17T14:10:54+01:00
     - Upped dependency on IRC::Log to get better performance
 
