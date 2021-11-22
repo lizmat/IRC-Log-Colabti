@@ -1,6 +1,6 @@
 use IRC::Log:ver<0.0.20>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.44>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.45>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
@@ -16,7 +16,13 @@ class IRC::Log::Colabti:ver<0.0.44>:auth<zef:lizmat> does IRC::Log {
           $nr-conversation-entries is raw,
     --> Nil) is implementation-detail {
 
-        for $text.split("\n").map({ ++$linenr; $_ if .chars }) -> $line {
+        my str $last-line = "";
+        for $text.split("\n").map({
+            ++$linenr;
+            if .chars && $_ ne $last-line {
+                $last-line = $_;
+            }
+        }) -> $line {
 
             if $line.starts-with('[') && $line.substr-eq('] ',6) {
                 my int $hour   = my str $ = $line.substr(1,2);  # fast Str to

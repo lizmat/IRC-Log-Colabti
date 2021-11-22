@@ -2,6 +2,9 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.45  2021-11-22T20:43:25+01:00
+    - Filter out doubly logged lines
+
 0.0.44  2021-11-18T12:03:01+01:00
     - Upped dependency on IRC::Log for handling empty logs
 
