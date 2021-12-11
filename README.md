@@ -24,6 +24,36 @@ DESCRIPTION
 
 IRC::Log::Colabti provides an interface to the IRC logs that are available from colabti.org (raw format). Please see [IRC::Log](IRC::Log) for more information.
 
+ADDITIONAL METHODS
+==================
+
+merge
+-----
+
+```raku
+my $merged = $log.merge($channel);    # merge with Colabti archive of same date
+
+my $merged = $log.merge($slurped);    # merge with another log file of same date
+
+my $merged = $log.merge($other-log);  # merge with log object
+
+my $merged = $log.merge($path.IO);    # merge with log file by IO::Path
+```
+
+The `merge` instance method attempts to add entries from another log of the same date that are not present in the entries of the instance. This functionality is intended to fix "holes" in the logs caused by temporary outages of the various loggers.
+
+It takes a single positional argument, which can either be:
+
+  * the name of a channel: fetches content from Colabti's website
+
+  * a string with the contents of a log file
+
+  * another IRC::Log object
+
+  * an IO::Path object of the log file to merge with
+
+It either returns `Nil` if no missing entries were found, or a freshly created object of the same type as the invocant.
+
 AUTHOR
 ======
 

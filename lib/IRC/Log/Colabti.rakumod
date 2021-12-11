@@ -1,6 +1,6 @@
-use IRC::Log:ver<0.0.23>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.24>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.48>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.49>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
@@ -135,6 +135,56 @@ class IRC::Log::Colabti:ver<0.0.48>:auth<zef:lizmat> does IRC::Log {
             }
         }
     }
+
+    my subset Channel of Str where / ^ \w+ $ /;
+    my constant $colabti = 'https://colabti.org/irclogger/irclogger_log';
+
+    proto method merge(|) {*}
+    multi method merge(IRC::Log::Colabti:D: IRC::Log:D $other) {
+        my  @left[1440];  @left[.heartbeat].push: $_ for   self.entries.List;
+        my @right[1440]; @right[.heartbeat].push: $_ for $other.entries.List;
+
+        my $final := IterationBuffer.new;
+        my $added := False;
+        for ^1440 -> int $beat {
+            with @left[$beat] -> @messages {
+                with @right[$beat] -> @rmessages {
+                    my int $insert-at = -1;
+                    for @rmessages -> $message {
+                        with @messages.first(* eqv $message, :k) {
+                            $insert-at = $_;
+                        }
+                        else {
+                            @messages.splice($insert-at, 0, $message);
+                            $added := True;
+                            ++$insert-at;
+                        }
+                    }
+                }
+                $final.push: $_ for @messages;
+            }
+            orwith @right[$beat] -> @messages {
+                $final.push: $_ for @messages;
+                $added := True;
+            }
+        }
+
+        $added
+          ?? self.WHAT.new($final.List.map(*.gist).join("\n"), $!Date)
+          !! Nil
+    }
+    multi method merge(IRC::Log::Colabti:D: Channel:D $channel) {
+        my $proc := run
+          'curl', '-k', "$colabti/$channel?date=$!date;raw=on",
+          :out, :!err;
+        self.merge($proc.out.slurp)
+    }
+    multi method merge(IRC::Log::Colabti:D: Str:D $text) {
+        self.merge(self.WHAT.new($text, $!Date))
+    }
+    multi method merge(IRC::Log::Colabti:D: IO::Path:D $path) {
+        self.merge(self.WHAT.new($path.slurp(:enc("utf8-c8")), $!Date))
+    }
 }
 
 sub EXPORT() { IRC::Log::Colabti.EXPORT }
@@ -167,6 +217,36 @@ my $log = IRC::Log::Colabti.new($text, $date);
 
 IRC::Log::Colabti provides an interface to the IRC logs that are available
 from colabti.org (raw format).  Please see L<IRC::Log> for more information.
+
+=head1 ADDITIONAL METHODS
+
+=head2 merge
+
+=begin code :lang<raku>
+
+my $merged = $log.merge($channel);    # merge with Colabti archive of same date
+
+my $merged = $log.merge($slurped);    # merge with another log file of same date
+
+my $merged = $log.merge($other-log);  # merge with log object
+
+my $merged = $log.merge($path.IO);    # merge with log file by IO::Path
+
+=end code
+
+The C<merge> instance method attempts to add entries from another log of
+the same date that are not present in the entries of the instance.  This
+functionality is intended to fix "holes" in the logs caused by temporary
+outages of the various loggers.
+
+It takes a single positional argument, which can either be:
+=item the name of a channel: fetches content from Colabti's website
+=item a string with the contents of a log file
+=item another IRC::Log object
+=item an IO::Path object of the log file to merge with
+
+It either returns C<Nil> if no missing entries were found, or a freshly
+created object of the same type as the invocant.
 
 =head1 AUTHOR
 
