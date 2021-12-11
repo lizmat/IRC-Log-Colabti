@@ -6,7 +6,7 @@
   "build-depends": [
   ],
   "depends": [
-    "IRC::Log:ver<0.0.21>:auth<zef:lizmat>"
+    "IRC::Log:ver<0.0.23>:auth<zef:lizmat>"
   ],
   "description": "interface to IRC logs from colabti.org",
   "license": "Artistic-2.0",
@@ -22,5 +22,5 @@
   ],
   "test-depends": [
   ],
-  "version": "0.0.47"
+  "version": "0.0.48"
 }
