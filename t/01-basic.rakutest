@@ -1,9 +1,12 @@
 use Test;
 use IRC::Log::Colabti;
 
-my $filename = '2021-04-22';
-my $date     = $filename;
-my $pos      = -1;
+my $filename  = '2021-04-22';
+my $additions = $filename ~ '-with-additions';
+my $missed    = $filename ~ '-missed';
+my $date      = $filename;
+my $Date      = $date.Date;
+my $pos       = -1;
 
 my $path     = $?FILE.IO.sibling: $filename;
 my $log      = IRC::Log::Colabti.new: $path;
@@ -52,7 +55,7 @@ sub test-common(
     }
 }
 
-plan 65 + @entries;
+plan 68 + @entries;
 
 is-deeply IRC::Log::Colabti.IO2Date($path), $date.Date,
   'was the date elided correctly';
@@ -196,7 +199,7 @@ is $slurped.nr-conversation-entries, 3, 'is nr conversation entries correct';
 is $log.update($?FILE.IO.sibling: $filename).elems, 0,
   'Did the update without changes indicate 0 entries were added?';
 
-is $log.update($?FILE.IO.sibling: $filename ~ '-with-additions').elems, 2,
+is $log.update($?FILE.IO.sibling: $additions).elems, 2,
   'Did the update indicate 2 entries were added?';
 is $log.entries.elems, $nr-entries + 2, 'did we really get 2 extra entries';
 is $log.nr-control-entries,      7, 'is nr control entries correct';
@@ -226,5 +229,15 @@ subtest 'test all known nicks' => {
 
 $log = IRC::Log::Colabti.new: "", Date.today;
 is $log.entries.elems, 0, 'did we get a proper empty log';
+
+$log = IRC::Log::Colabti.new: $?FILE.IO.sibling($additions), $Date;
+is $log.entries.elems, $nr-entries, 'did we right number of entries';
+
+my $merged = $log.merge($?FILE.IO.sibling: $missed);
+is $merged.entries.elems, ++$nr-entries, 'merge right number of entries';
+
+$pos = 4;  # yuck
+test-common $merged.entries[5], 'Joined', 12, 37, 0, 4, 'nine', True, False,
+  'test added joining';
 
 # vim: expandtab shiftwidth=4
