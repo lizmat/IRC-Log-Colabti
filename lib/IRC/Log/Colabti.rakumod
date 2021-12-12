@@ -1,6 +1,6 @@
 use IRC::Log:ver<0.0.24>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.49>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
@@ -136,7 +136,7 @@ class IRC::Log::Colabti:ver<0.0.49>:auth<zef:lizmat> does IRC::Log {
         }
     }
 
-    my subset Channel of Str where / ^ \w+ $ /;
+    my subset Channel of Str where / ^ <[-\w]>+ $ /;
     my constant $colabti = 'https://colabti.org/irclogger/irclogger_log';
 
     proto method merge(|) {*}
@@ -155,9 +155,8 @@ class IRC::Log::Colabti:ver<0.0.49>:auth<zef:lizmat> does IRC::Log {
                             $insert-at = $_;
                         }
                         else {
-                            @messages.splice($insert-at, 0, $message);
+                            @messages.splice(++$insert-at, 0, $message);
                             $added := True;
-                            ++$insert-at;
                         }
                     }
                 }
