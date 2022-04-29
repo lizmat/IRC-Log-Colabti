@@ -13,12 +13,12 @@ sub search(@indices, |capture) is test-assertion {
         plan 2;
 
         is-deeply
-          $log.search(|capture).map(*.target),
+          $log.search(|capture).map(*.target).Seq,
           @targets[@indices],
           'forward';
 
         is-deeply
-          $log.search(:reverse, |capture).map(*.target),
+          $log.search(:reverse, |capture).map(*.target).Seq,
           @targets[@indices.reverse],
           'reverse';
     }

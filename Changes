@@ -2,6 +2,12 @@ Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
 
+0.0.51  2022-04-29T11:23:05+02:00
+    - Fix URL for merging logs with colabti.org
+    - Add :normalizer argument for merging with Colabti's log
+    - Fix tests for new Empty.map -> Empty behaviour in 2022.04
+    - Update copyright year
+
 0.0.50  2021-12-12T13:16:55+01:00
     - Fix off-by-one error in merge insertion
 

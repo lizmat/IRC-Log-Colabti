@@ -54,6 +54,8 @@ It takes a single positional argument, which can either be:
 
 It either returns `Nil` if no missing entries were found, or a freshly created object of the same type as the invocant.
 
+When merging with Colabti's channel logs, it is possible to specify a `:normalizer` argument to indicate code to normalize the logs obtained from Colabti. By default, this will be the same normalization as used by the `IRC::Client::Plugin::Logger` module.
+
 AUTHOR
 ======
 
@@ -64,7 +66,7 @@ Source can be located at: https://github.com/lizmat/IRC-Log-Colabti . Comments a
 COPYRIGHT AND LICENSE
 =====================
 
-Copyright 2021 Elizabeth Mattijsen
+Copyright 2021, 2022 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 

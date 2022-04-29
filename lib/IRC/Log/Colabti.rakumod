@@ -1,6 +1,14 @@
 use IRC::Log:ver<0.0.24>:auth<zef:lizmat>;
 
-class IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat> does IRC::Log {
+my sub default-normalizer($text) {
+    $text.subst("\x7F", '^H', :global)
+         .subst("\x17", '^W', :global)
+         .subst(/ "\x03" \d? /,                             :global)
+         .subst(/ <[\x00..\x1f] - [\x09..\x0a] - [\x0d]> /, :global)
+         .subst(/ '[' [ \d ';' ]? \d ** 1..2 m /,           :global)
+}
+
+class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;
@@ -172,11 +180,14 @@ class IRC::Log::Colabti:ver<0.0.50>:auth<zef:lizmat> does IRC::Log {
           ?? self.WHAT.new($final.List.map(*.gist).join("\n"), $!Date)
           !! Nil
     }
-    multi method merge(IRC::Log::Colabti:D: Channel:D $channel) {
+    multi method merge(
+      IRC::Log::Colabti:D: Channel:D $channel,
+      :&normalizer = &default-normalizer
+    ) {
         my $proc := run
-          'curl', '-k', "$colabti/$channel?date=$!date;raw=on",
+          'curl', '-k', "$colabti/$channel?date=$!date&raw=on",
           :out, :!err;
-        self.merge($proc.out.slurp)
+        self.merge: normalizer($proc.out.slurp)
     }
     multi method merge(IRC::Log::Colabti:D: Str:D $text) {
         self.merge(self.WHAT.new($text, $!Date))
@@ -247,6 +258,11 @@ It takes a single positional argument, which can either be:
 It either returns C<Nil> if no missing entries were found, or a freshly
 created object of the same type as the invocant.
 
+When merging with Colabti's channel logs, it is possible to specify a
+C<:normalizer> argument to indicate code to normalize the logs obtained
+from Colabti.  By default, this will be the same normalization as used
+by the C<IRC::Client::Plugin::Logger> module.
+
 =head1 AUTHOR
 
 Elizabeth Mattijsen <liz@raku.rocks>
@@ -256,7 +272,7 @@ Comments and Pull Requests are welcome.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2021 Elizabeth Mattijsen
+Copyright 2021, 2022 Elizabeth Mattijsen
 
 This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
 
