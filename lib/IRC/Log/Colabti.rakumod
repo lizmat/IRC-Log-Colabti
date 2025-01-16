@@ -1,4 +1,4 @@
-use IRC::Log:ver<0.0.24>:auth<zef:lizmat>;
+use IRC::Log:ver<0.0.25+>:auth<zef:lizmat>;
 
 my sub default-normalizer($text) {
     $text.subst("\x7F", '^H', :global)
@@ -41,7 +41,7 @@ class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
                     ++$ordinal;
                 }
                 else {
-                    $last-hour   = $hour;
+                    $last-hour   = $hour;  # UNCOVERABLE
                     $last-minute = $minute;
                     $ordinal     = 0;
                 }
@@ -89,19 +89,19 @@ class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
                               :$nick;
                             ++$nr-control-entries;
                         }
-                        elsif $message eq 'left' {
+                        elsif $message eq 'left' {  # UNCOVERABLE
                             IRC::Log::Left.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick;
                             ++$nr-control-entries;
                         }
-                        elsif $message.starts-with('is now known as ') {
+                        elsif $message.starts-with('is now known as ') {  # UNCOVERABLE
                             IRC::Log::Nick-Change.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick, :new-nick($message.substr(16));
                             ++$nr-control-entries;
                         }
-                        elsif $message.starts-with('sets mode: ') {
+                        elsif $message.starts-with('sets mode: ') {  # UNCOVERABLE
                             my @nick-names = $message.substr(10).words;
                             my $flags     := @nick-names.shift;
                             IRC::Log::Mode.new:
@@ -109,14 +109,14 @@ class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
                               :$nick, :$flags, :@nick-names;
                             ++$nr-control-entries;
                         }
-                        elsif $message.starts-with('changes topic to: ') {
+                        elsif $message.starts-with('changes topic to: ') {  # UNCOVERABLE
                             self.last-topic-change = IRC::Log::Topic.new:
                               :log(self), :$hour, :$minute, :$ordinal,
                               :$nick, :text($message.substr(18));
                             ++$nr-control-entries;
                             ++$nr-conversation-entries;
                         }
-                        elsif $message.starts-with('was kicked by ') {
+                        elsif $message.starts-with('was kicked by ') {  # UNCOVERABLE
                             my $kickee := $nick;
                             my $index  := $message.index(' ', 14);
                             $nick      := $message.substr(14, $index - 14);
@@ -172,7 +172,7 @@ class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
             }
             orwith @right[$beat] -> @messages {
                 $final.push: $_ for @messages;
-                $added := True;
+                $added := True;  # UNCOVERABLE
             }
         }
 
@@ -198,84 +198,5 @@ class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
 }
 
 sub EXPORT() { IRC::Log::Colabti.EXPORT }
-
-#-------------------------------------------------------------------------------
-# Documentation
-
-=begin pod
-
-=head1 NAME
-
-IRC::Log::Colabti - interface to IRC logs from colabti.org
-
-=head1 SYNOPSIS
-
-=begin code :lang<raku>
-
-use IRC::Log::Colabti;
-
-my $log = IRC::Log::Colabti.new($filename.IO);
-
-say "Logs from $log.date()";
-.say for $log.entries.List;
-
-my $log = IRC::Log::Colabti.new($text, $date);
-
-=end code
-
-=head1 DESCRIPTION
-
-IRC::Log::Colabti provides an interface to the IRC logs that are available
-from colabti.org (raw format).  Please see L<IRC::Log> for more information.
-
-=head1 ADDITIONAL METHODS
-
-=head2 merge
-
-=begin code :lang<raku>
-
-my $merged = $log.merge($channel);    # merge with Colabti archive of same date
-
-my $merged = $log.merge($slurped);    # merge with another log file of same date
-
-my $merged = $log.merge($other-log);  # merge with log object
-
-my $merged = $log.merge($path.IO);    # merge with log file by IO::Path
-
-=end code
-
-The C<merge> instance method attempts to add entries from another log of
-the same date that are not present in the entries of the instance.  This
-functionality is intended to fix "holes" in the logs caused by temporary
-outages of the various loggers.
-
-It takes a single positional argument, which can either be:
-=item the name of a channel: fetches content from Colabti's website
-=item a string with the contents of a log file
-=item another IRC::Log object
-=item an IO::Path object of the log file to merge with
-
-It either returns C<Nil> if no missing entries were found, or a freshly
-created object of the same type as the invocant.
-
-When merging with Colabti's channel logs, it is possible to specify a
-C<:normalizer> argument to indicate code to normalize the logs obtained
-from Colabti.  By default, this will be the same normalization as used
-by the C<IRC::Client::Plugin::Logger> module.
-
-=head1 AUTHOR
-
-Elizabeth Mattijsen <liz@raku.rocks>
-
-Source can be located at: https://github.com/lizmat/IRC-Log-Colabti .
-Comments and Pull Requests are welcome.
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright 2021, 2022 Elizabeth Mattijsen
-
-This library is free software; you can redistribute it and/or modify it under the Artistic License 2.0.
-
-=end pod
 
 # vim: expandtab shiftwidth=4

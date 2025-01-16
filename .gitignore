@@ -1,6 +1,7 @@
 .precomp/
 /IRC-Log-Colabti-*
 /releases/
+*.rakucov
 /11
 /1
 /logs
