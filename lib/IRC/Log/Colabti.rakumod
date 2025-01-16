@@ -8,7 +8,7 @@ my sub default-normalizer($text) {
          .subst(/ '[' [ \d ';' ]? \d ** 1..2 m /,           :global)
 }
 
-class IRC::Log::Colabti:ver<0.0.51>:auth<zef:lizmat> does IRC::Log {
+class IRC::Log::Colabti:ver<0.0.52>:auth<zef:lizmat> does IRC::Log {
 
     method !problem(Str:D $line, Int:D $linenr, Str:D $reason --> Nil) {
         $!problems.push: "Line $linenr: $reason" => $line;

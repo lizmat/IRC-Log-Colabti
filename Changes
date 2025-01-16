@@ -1,6 +1,8 @@
 Revision history for IRC-Log-Colabti
 
 {{$NEXT}}
+
+0.0.52  2025-01-16T13:38:12+01:00
     - Up dependency on IRC::Log
     - Add CI badge for each OS
     - Add sponsor link
